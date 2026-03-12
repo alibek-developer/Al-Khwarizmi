@@ -2,6 +2,7 @@
 
 import { Footer } from '@/components/footer'
 import { Header } from '@/components/header'
+import { useIsUzbek } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import {
   ArrowRight,
@@ -203,6 +204,7 @@ const faqs = [
    COMPONENT
 ───────────────────────────────────────────── */
 export default function Home() {
+  const isUzbek = useIsUzbek()
   const [activeCat, setActiveCat] = useState(0)
   const [activeTestimonial, setActiveTestimonial] = useState(0)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
@@ -294,16 +296,20 @@ export default function Home() {
                 </h1>
 
                 <p className="text-slate-600 dark:text-slate-400 text-lg mb-4 leading-relaxed max-w-lg">
-                  Join the elite program and transform your career with world-class mentors.
+                  {isUzbek
+                    ? "Kelajakni shakllantiruvchi texnologiyalarni o'rganing va martabangizni yangi bosqichga olib chiqing."
+                    : 'Join the elite program and transform your career with world-class mentors.'}
                 </p>
                 <p className="text-slate-400 dark:text-slate-500 text-base mb-10 leading-relaxed max-w-lg font-light italic">
-                  Kelajakni shakllantiruvchi texnologiyalarni o'rganing va martabangizni yangi bosqichga olib chiqing.
+                  {isUzbek
+                    ? 'Join the elite program and transform your career with world-class mentors.'
+                    : "Kelajakni shakllantiruvchi texnologiyalarni o'rganing va martabangizni yangi bosqichga olib chiqing."}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 mb-12">
                   <Link href="/courses">
                     <Button className="bg-blue-600 hover:bg-blue-500 text-white h-14 px-8 font-bold text-base rounded-xl shadow-2xl shadow-blue-500/25 transition-all hover:scale-105 hover:shadow-blue-500/40">
-                      Explore Courses <ArrowRight className="w-4 h-4 ml-2" />
+                      {isUzbek ? "Kurslarni ko'rish" : 'Explore Courses'} <ArrowRight className="w-4 h-4 ml-2" />
                     </Button>
                   </Link>
                   <Button variant="ghost" className="text-slate-800 dark:text-white border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 h-14 px-8 font-semibold text-base rounded-xl transition-all group">
@@ -316,10 +322,16 @@ export default function Home() {
 
                 {/* Mini stats */}
                 <div className="flex gap-8">
-                  {[['5,000+', 'Talabalar'], ['98%', 'Ish Joylashish'], ['45+', 'Kurslar']].map(([n, l]) => (
-                    <div key={l}>
-                      <div className="text-2xl font-black text-slate-900 dark:text-white">{n}</div>
-                      <div className="text-xs text-slate-500 mt-0.5">{l}</div>
+                  {[
+                    { n: '5,000+', en: 'Students', uz: 'Talabalar' },
+                    { n: '98%', en: 'Job Placement', uz: 'Ish joylashish' },
+                    { n: '45+', en: 'Courses', uz: 'Kurslar' },
+                  ].map((item) => (
+                    <div key={item.n}>
+                      <div className="text-2xl font-black text-slate-900 dark:text-white">{item.n}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">
+                        {isUzbek ? item.uz : item.en}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -433,14 +445,19 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-12 gap-4">
               <div>
-                <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-2">Featured Programs / Tanlangan Dasturlar</p>
+                    <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-2">
+                      {isUzbek ? 'Tanlangan dasturlar' : 'Featured Programs'}
+                    </p>
                 <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white leading-tight">
-                  In-Demand Courses<br />
-                  <span className="text-slate-400 dark:text-slate-600 font-light text-2xl">Eng So'ralgan Kurslar</span>
+                  {isUzbek ? 'Eng so‘ralgan kurslar' : 'In-Demand Courses'}
+                  <br />
+                  <span className="text-slate-400 dark:text-slate-600 font-light text-2xl">
+                    {isUzbek ? 'In-demand courses' : "Eng so'ralgan kurslar"}
+                  </span>
                 </h2>
               </div>
-              <Link href="/courses" className="flex items-center gap-2 text-blue-600 font-bold text-sm hover:gap-3 transition-all group">
-                View all courses / Barchasini ko'rish
+                <Link href="/courses" className="flex items-center gap-2 text-blue-600 font-bold text-sm hover:gap-3 transition-all group">
+                {isUzbek ? "Barcha kurslarni ko'rish" : 'View all courses'}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </Link>
             </div>
@@ -471,8 +488,12 @@ export default function Home() {
                   </div>
 
                   <div className="p-5">
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-0.5 leading-snug">{course.title}</h3>
-                    <p className="text-slate-400 text-xs mb-4 italic">{course.titleUz}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-0.5 leading-snug">
+                      {isUzbek ? course.titleUz : course.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs mb-4 italic">
+                      {isUzbek ? course.title : course.titleUz}
+                    </p>
 
                     <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-4">
                       <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-lg">
@@ -506,11 +527,15 @@ export default function Home() {
         <section className="py-20 bg-white dark:bg-slate-950">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">Why Us / Nima Uchun Biz</p>
+              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">
+                {isUzbek ? 'Nima uchun biz' : 'Why Us'}
+              </p>
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-3">
-                Why Choose Al-Kharazmi?
+                {isUzbek ? 'Nima uchun Al-Xorazmiy?' : 'Why Choose Al-Kharazmi?'}
               </h2>
-              <p className="text-slate-400 text-base italic">Nima uchun Al-Xorazmiyni tanlash kerak?</p>
+              <p className="text-slate-400 text-base italic">
+                {isUzbek ? 'Why choose Al-Kharazmi?' : 'Nima uchun Al-Xorazmiyni tanlash kerak?'}
+              </p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -528,9 +553,15 @@ export default function Home() {
                     <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-1 text-base">{item.title}</h3>
-                    <p className="text-blue-600 text-xs font-medium mb-3 italic">{item.titleUz}</p>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{item.description}</p>
+                    <h3 className="font-bold text-slate-900 dark:text-white mb-1 text-base">
+                      {isUzbek ? item.titleUz : item.title}
+                    </h3>
+                    <p className="text-blue-600 text-xs font-medium mb-3 italic">
+                      {isUzbek ? item.title : item.titleUz}
+                    </p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                      {isUzbek ? item.descriptionUz : item.description}
+                    </p>
                   </div>
                 )
               })}
@@ -545,11 +576,15 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12">
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">Our Team / Jamoamiz</p>
+              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">
+                {isUzbek ? 'Jamoamiz' : 'Our Team'}
+              </p>
                 <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-1">
-                  Learn from the Best
+                {isUzbek ? "Eng yaxshilardan o'rganing" : 'Learn from the Best'}
                 </h2>
-                <p className="text-slate-400 text-base italic">Eng yaxshilardan o'rganing</p>
+              <p className="text-slate-400 text-base italic">
+                {isUzbek ? 'Learn from the best' : "Eng yaxshilardan o'rganing"}
+              </p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => scrollInstructor(-1)} className="w-11 h-11 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-all shadow-sm">
@@ -634,9 +669,15 @@ export default function Home() {
 
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">Success Stories / Muvaffaqiyat Hikoyalari</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">What Our Students Say</h2>
-              <p className="text-slate-400 italic">Talabalarimiz nima deyishadi</p>
+              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">
+                {isUzbek ? 'Muvaffaqiyat hikoyalari' : 'Success Stories'}
+              </p>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                {isUzbek ? 'Talabalarimiz nima deyishadi' : 'What Our Students Say'}
+              </h2>
+              <p className="text-slate-400 italic">
+                {isUzbek ? 'What our students say' : 'Talabalarimiz nima deyishadi'}
+              </p>
             </div>
 
             <div className="max-w-4xl mx-auto">
@@ -649,10 +690,10 @@ export default function Home() {
                   ))}
                 </div>
                 <p className="text-slate-900 dark:text-white text-xl md:text-2xl text-center leading-relaxed font-medium mb-3">
-                  "{testimonials[activeTestimonial].text}"
+                  "{isUzbek ? testimonials[activeTestimonial].textUz : testimonials[activeTestimonial].text}"
                 </p>
                 <p className="text-slate-400 text-base text-center italic mb-10">
-                  "{testimonials[activeTestimonial].textUz}"
+                  "{isUzbek ? testimonials[activeTestimonial].text : testimonials[activeTestimonial].textUz}"
                 </p>
                 <div className="flex items-center justify-center gap-4">
                   <img src={testimonials[activeTestimonial].image} alt="" className="w-14 h-14 rounded-full object-cover border-2 border-blue-200 dark:border-blue-500/30" />
@@ -690,11 +731,15 @@ export default function Home() {
         <section className="py-20 bg-white dark:bg-slate-950">
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">FAQ / Savol-Javoblar</p>
+              <p className="text-blue-600 text-sm font-bold tracking-widest uppercase mb-3">
+                {isUzbek ? 'Savol-javoblar' : 'FAQ'}
+              </p>
               <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
-                Frequently Asked Questions
+                {isUzbek ? "Ko'p so'raladigan savollar" : 'Frequently Asked Questions'}
               </h2>
-              <p className="text-slate-400 italic">Ko'p so'raladigan savollar</p>
+              <p className="text-slate-400 italic">
+                {isUzbek ? 'Frequently asked questions' : "Ko'p so'raladigan savollar"}
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -712,8 +757,12 @@ export default function Home() {
                     className="w-full flex items-center justify-between p-6 text-left bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                   >
                     <div className="pr-4">
-                      <p className="font-bold text-slate-900 dark:text-white text-sm">{faq.q}</p>
-                      <p className="text-slate-400 text-xs italic mt-0.5">{faq.qUz}</p>
+                      <p className="font-bold text-slate-900 dark:text-white text-sm">
+                        {isUzbek ? faq.qUz : faq.q}
+                      </p>
+                      <p className="text-slate-400 text-xs italic mt-0.5">
+                        {isUzbek ? faq.q : faq.qUz}
+                      </p>
                     </div>
                     <div className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${openFaq === idx ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>
                       {openFaq === idx ? <Minus className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -721,8 +770,12 @@ export default function Home() {
                   </button>
                   {openFaq === idx && (
                     <div className="px-6 pb-6 bg-white dark:bg-slate-900">
-                      <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-2">{faq.a}</p>
-                      <p className="text-slate-400 text-xs italic leading-relaxed">{faq.aUz}</p>
+                      <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed mb-2">
+                        {isUzbek ? faq.aUz : faq.a}
+                      </p>
+                      <p className="text-slate-400 text-xs italic leading-relaxed">
+                        {isUzbek ? faq.a : faq.aUz}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -741,30 +794,36 @@ export default function Home() {
           <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-full mb-8 tracking-widest uppercase">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              Summer 2024 Cohort Open
+              {isUzbek ? "2024-yil yozgi oqimiga qabul ochiq" : 'Summer 2024 Cohort Open'}
             </div>
 
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight">
-              Ready to Build<br />the Future?
+              {isUzbek ? 'Kelajakni birga qurishga tayyormisiz?' : 'Ready to Build the Future?'}
             </h2>
             <p className="text-blue-100 text-lg mb-2 max-w-xl mx-auto">
-              Secure your spot in the most prestigious tech academy in the region.
+              {isUzbek
+                ? "Mintaqadagi eng nufuzli texnologiya akademiyasida o'rningizni hoziroq band qiling."
+                : 'Secure your spot in the most prestigious tech academy in the region.'}
             </p>
             <p className="text-blue-200/70 text-base italic mb-12 max-w-xl mx-auto">
-              Mintaqadagi eng nufuzli texnologiya akademiyasida o'rningizni band qiling.
+              {isUzbek
+                ? 'Secure your spot in the most prestigious tech academy in the region.'
+                : "Mintaqadagi eng nufuzli texnologiya akademiyasida o'rningizni band qiling."}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button className="bg-white text-blue-700 hover:bg-blue-50 h-14 px-10 font-black text-base rounded-xl shadow-2xl shadow-blue-900/30 transition-all hover:scale-105">
-                Apply Now / Hozir Murojaat
+                {isUzbek ? "Hozir murojaat qiling" : 'Apply Now'}
               </Button>
               <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/20 h-14 px-10 font-bold text-base rounded-xl backdrop-blur-sm transition-all">
-                Schedule a Tour / Tur Rejalash
+                {isUzbek ? 'Sayohatni rejalashtirish' : 'Schedule a Tour'}
               </Button>
             </div>
 
             <p className="text-blue-200/60 text-sm">
-              No commitment required. Cancel anytime in the first 30 days. / Majburiyat yo'q. Birinchi 30 kun ichida bekor qiling.
+              {isUzbek
+                ? "Majburiyat yo'q. Birinchi 30 kun ichida istalgan vaqtda bekor qilishingiz mumkin."
+                : 'No commitment required. Cancel anytime in the first 30 days.'}
             </p>
           </div>
         </section>

@@ -2,6 +2,7 @@
 
 import { Footer } from '@/components/footer'
 import { Header } from '@/components/header'
+import { useIsUzbek } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import {
   Award,
@@ -27,23 +28,24 @@ import { useState } from 'react'
 const teachers = [
   {
     id: 1,
-    name: 'Dr. Albert Chen',
-    specialization: 'AI & Machine Learning Expert',
-    specializationUz: 'Sun\'iy Intellekt Mutaxassisi',
+    name: 'Tulkin Rajabbaev',
+    specialization: 'English Teacher',
+    specializationUz: 'Ingliz Tili O\'qituvchisi',
     experience: '12+ years',
-    company: 'Former Google DeepMind',
+    company: 'AL-Khorazmiy Academy',
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&h=700&fit=crop&crop=face',
     badge: 'STAFF PICK',
     rating: 4.9,
     students: '2,340',
-    bio: 'Dr. Albert Chen is a leading AI researcher with over 12 years of experience in machine learning and deep learning systems. He holds a PhD from Stanford University and has published 30+ papers in top-tier AI conferences.',
-    bioUz: 'Dr. Albert Chen mashinali o\'qitish va chuqur o\'qitish tizimlari sohasida 12 yildan ortiq tajribaga ega bo\'lgan yetakchi AI tadqiqotchisidir.',
+    certificate: 'IELTS 8.5',
+    bio: 'Tulkin Rajabbaev is a highly experienced English language instructor with over 12 years of teaching. He holds an IELTS score of 8.5 and has helped hundreds of students achieve their target scores in IELTS and CEFR examinations.',
+    bioUz: 'Tulkin Rajabbaev 12 yildan ortiq ingliz tili o\'qitish tajribasiga ega. IELTS 8.5 natijasiga ega bo\'lib, yuzlab talabalar IELTS va CEFR imtihonlarida maqsadli ball olishlariga yordam bergan.',
     socials: ['mail', 'monitor', 'globe'],
-    skills: ['Deep Learning', 'NLP', 'Computer Vision', 'PyTorch', 'TensorFlow'],
+    skills: ['IELTS Preparation', 'CEFR B2–C2', 'Business English', 'Academic Writing', 'Speaking & Pronunciation'],
     courses: [
-      { title: 'AI & Machine Learning Fundamentals', duration: '4 Months', level: 'Beginner', students: 980 },
-      { title: 'Advanced Neural Networks', duration: '3 Months', level: 'Advanced', students: 640 },
-      { title: 'Computer Vision Bootcamp', duration: '6 Weeks', level: 'Intermediate', students: 720 },
+      { title: 'IELTS Intensive Preparation', duration: '3 Months', level: 'Intermediate', students: 980 },
+      { title: 'General English (A1–C1)', duration: '6 Months', level: 'Beginner', students: 1200 },
+      { title: 'Business English Masterclass', duration: '6 Weeks', level: 'Advanced', students: 460 },
     ],
   },
   {
@@ -224,65 +226,85 @@ function LevelBadge({ level }: { level: string }) {
    MODAL
 ───────────────────────────────────────── */
 function TeacherModal({ teacher, onClose }: { teacher: typeof teachers[0]; onClose: () => void }) {
+  const isUzbek = useIsUzbek()
+  const isEnglishTeacher = teacher.specialization.toLowerCase().includes('english')
+
+  // Build stats based on teacher type
+  const stats = isEnglishTeacher
+    ? [
+        { icon: Award, value: teacher.certificate ?? 'IELTS 8.0', label: 'Sertifikat', color: 'text-amber-500' },
+        { icon: Users, value: teacher.students, label: 'Talabalar', color: 'text-blue-600' },
+        { icon: Clock, value: teacher.experience, label: 'Tajriba', color: 'text-emerald-600' },
+      ]
+    : [
+        { icon: Users, value: teacher.students, label: 'Talabalar', color: 'text-blue-600' },
+        { icon: Clock, value: teacher.experience, label: 'Tajriba', color: 'text-emerald-600' },
+        { icon: Star, value: teacher.rating, label: 'Reyting', color: 'text-yellow-500' },
+      ]
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-5xl h-[85vh] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden flex"
+        className="relative w-full max-w-5xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden
+                   flex flex-col sm:flex-row
+                   max-h-[92vh] sm:h-[85vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-20 w-9 h-9 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
+          className="absolute top-3 right-3 z-20 w-9 h-9 rounded-xl bg-black/30 hover:bg-black/50 backdrop-blur-sm flex items-center justify-center text-white transition-colors"
         >
           <X className="w-4 h-4" />
         </button>
 
-        {/* Left — photo (wider: 45%) */}
-        <div className="w-[45%] relative shrink-0">
+        {/* ── PHOTO ──
+            Mobile: fixed height top banner
+            Desktop: 45% width left panel               */}
+        <div className="relative shrink-0 h-52 sm:h-auto sm:w-[45%]">
           <img
             src={teacher.image}
             alt={teacher.name}
-            className="w-full h-full object-cover object-top"
+            className="absolute inset-0 w-full h-full object-cover object-top"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/30 to-transparent" />
 
-          {/* Name overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-7">
+          {/* Name overlay — always at bottom of photo */}
+          <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
             {teacher.badge && (
-              <span className="inline-block bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-lg mb-3 tracking-wider">
+              <span className="inline-block bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-lg mb-2 tracking-wider">
                 {teacher.badge}
               </span>
             )}
-            <h2 className="text-3xl font-black text-white leading-tight">{teacher.name}</h2>
-            <p className="text-blue-300 text-sm font-semibold mt-1">{teacher.specialization}</p>
-            <p className="text-slate-400 text-xs mt-0.5 italic">{teacher.specializationUz}</p>
+            <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">{teacher.name}</h2>
+            <p className="text-blue-300 text-sm font-semibold mt-0.5">
+              {isUzbek ? teacher.specializationUz : teacher.specialization}
+            </p>
+            <p className="text-slate-400 text-xs mt-0.5 italic">
+              {isUzbek ? teacher.specialization : teacher.specializationUz}
+            </p>
           </div>
         </div>
 
-        {/* Right — scrollable info (55%) */}
-        <div className="flex-1 overflow-y-auto p-7">
+        {/* ── SCROLLABLE RIGHT PANEL ── */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-7 min-h-0">
 
           {/* Quick stats */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            {[
-              { icon: Star, value: teacher.rating, label: 'Rating', color: 'text-yellow-500' },
-              { icon: Users, value: teacher.students, label: 'Students', color: 'text-blue-600' },
-              { icon: Clock, value: teacher.experience, label: 'Experience', color: 'text-emerald-600' },
-            ].map(({ icon: Icon, value, label, color }) => (
-              <div key={label} className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-3.5 text-center">
+          <div className="grid grid-cols-3 gap-2.5 mb-5">
+            {stats.map(({ icon: Icon, value, label, color }) => (
+              <div key={label} className="bg-slate-50 dark:bg-slate-800 rounded-2xl p-3 text-center">
                 <Icon className={`w-4 h-4 mx-auto mb-1.5 ${color}`} />
-                <div className="font-black text-slate-900 dark:text-white text-sm">{value}</div>
-                <div className="text-xs text-slate-400">{label}</div>
+                <div className="font-black text-slate-900 dark:text-white text-xs sm:text-sm leading-tight">{value}</div>
+                <div className="text-[10px] text-slate-400 mt-0.5">{label}</div>
               </div>
             ))}
           </div>
 
           {/* Company */}
-          <div className="flex items-center gap-2 mb-5 pb-5 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
             <BriefcaseBusiness className="w-4 h-4 text-slate-400 shrink-0" />
             <span className="text-sm text-slate-500 dark:text-slate-400 font-medium">{teacher.company}</span>
           </div>
@@ -292,12 +314,16 @@ function TeacherModal({ teacher, onClose }: { teacher: typeof teachers[0]; onClo
             <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-2.5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" /> About
             </h4>
-            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-2">{teacher.bio}</p>
-            <p className="text-xs text-slate-400 italic leading-relaxed">{teacher.bioUz}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-2">
+              {isUzbek ? teacher.bioUz : teacher.bio}
+            </p>
+            <p className="text-xs text-slate-400 italic leading-relaxed">
+              {isUzbek ? teacher.bio : teacher.bioUz}
+            </p>
           </div>
 
           {/* Skills */}
-          <div className="mb-6">
+          <div className="mb-5">
             <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" /> Skills / Ko'nikmalar
             </h4>
@@ -311,20 +337,20 @@ function TeacherModal({ teacher, onClose }: { teacher: typeof teachers[0]; onClo
           </div>
 
           {/* Courses */}
-          <div className="mb-6">
+          <div className="mb-5">
             <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" /> Courses / Kurslar
             </h4>
             <div className="space-y-2.5">
               {teacher.courses.map((course, idx) => (
                 <div key={idx} className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors group cursor-pointer">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
                       <BookOpen className="w-4 h-4 text-blue-600" />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">{course.title}</p>
-                      <div className="flex items-center gap-2 mt-1">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight truncate">{course.title}</p>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-xs text-slate-400">{course.duration}</span>
                         <span className="text-slate-300 dark:text-slate-600">·</span>
                         <LevelBadge level={course.level} />
@@ -335,22 +361,17 @@ function TeacherModal({ teacher, onClose }: { teacher: typeof teachers[0]; onClo
                       </div>
                     </div>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-blue-600 transition-colors shrink-0 ml-2" />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Socials & CTA */}
-          <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex gap-2">
-              {teacher.socials.map((s, i) => (
-                <SocialIcon key={i} type={s} size="md" />
-              ))}
-            </div>
-            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md shadow-blue-500/25">
+          {/* CTA only — socials removed */}
+          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+            <button className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-6 py-2.5 rounded-xl transition-all hover:scale-105 shadow-md shadow-blue-500/25">
               <GraduationCap className="w-4 h-4" />
-              Enroll in Course
+              Kursga yozilish
             </button>
           </div>
         </div>
@@ -364,6 +385,7 @@ function TeacherModal({ teacher, onClose }: { teacher: typeof teachers[0]; onClo
 ───────────────────────────────────────── */
 export default function TeachersPage() {
   const [selected, setSelected] = useState<typeof teachers[0] | null>(null)
+  const isUzbek = useIsUzbek()
 
   return (
     <>
@@ -379,32 +401,44 @@ export default function TeachersPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold px-4 py-2 rounded-full mb-6 uppercase tracking-widest">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-              The Faculty / O'qituvchilar
+              {isUzbek ? "O'qituvchilar" : 'The Faculty'}
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-5 text-slate-900 dark:text-white leading-[1.05] tracking-tight">
-              Learn from the{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Best Minds</span>
-              <br />in Modern Tech
+              {isUzbek ? "Eng yaxshi mutaxassislardan o'rganing" : (
+                <>
+                  Learn from the{' '}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">Best Minds</span>
+                  <br />in Modern Tech
+                </>
+              )}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto mb-3 leading-relaxed">
-              Our educators are industry veterans from global tech giants, dedicated to transforming students into world-class engineers.
+              {isUzbek
+                ? "Bizning o'qituvchilarimiz talabalarni jahon darajasidagi muhandislarga aylantirishga bag'ishlangan tajribali mutaxassislar."
+                : 'Our educators are industry veterans from global tech giants, dedicated to transforming students into world-class engineers.'}
             </p>
             <p className="text-slate-400 dark:text-slate-600 max-w-xl mx-auto mb-10 text-sm italic leading-relaxed">
-              Bizning o'qituvchilarimiz dunyo yetakchi texnologiya kompaniyalaridan kelgan tajribali mutaxassislar.
+              {isUzbek
+                ? "Our educators are industry veterans from global tech giants."
+                : "Bizning o'qituvchilarimiz dunyo yetakchi texnologiya kompaniyalaridan kelgan tajribali mutaxassislar."}
             </p>
 
             {/* Quick stats */}
             <div className="flex flex-wrap justify-center gap-3">
               {[
-                { icon: Users, label: '50+ Expert Mentors', labelUz: 'Mutaxassis Mentorlar' },
-                { icon: Award, label: 'Industry Certified', labelUz: 'Sanoat Sertifikatlangan' },
-                { icon: Clock, label: '10+ Years Avg. Exp', labelUz: "O'rtacha Tajriba" },
-              ].map(({ icon: Icon, label, labelUz }) => (
+              { icon: Users, label: '50+ Expert Mentors', labelUz: 'Mutaxassis Mentorlar' },
+              { icon: Award, label: 'Industry Certified', labelUz: 'Sanoat Sertifikatlangan' },
+              { icon: Clock, label: '10+ Years Avg. Exp', labelUz: "O'rtacha Tajriba" },
+            ].map(({ icon: Icon, label, labelUz }) => (
                 <div key={label} className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 rounded-xl shadow-sm">
                   <Icon className="w-4 h-4 text-blue-600" />
                   <div className="text-left">
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">{label}</span>
-                    <span className="text-xs text-slate-400 italic">{labelUz}</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">
+                      {isUzbek ? labelUz : label}
+                    </span>
+                    <span className="text-xs text-slate-400 italic">
+                      {isUzbek ? label : labelUz}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -417,12 +451,20 @@ export default function TeachersPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-3">
               <div>
-                <p className="text-blue-600 text-xs font-bold tracking-widest uppercase mb-1">Our Team / Jamoamiz</p>
-                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">Featured Instructors</h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">Mentorlaringizni tanlang — Discover mentors who match your goals</p>
+                <p className="text-blue-600 text-xs font-bold tracking-widest uppercase mb-1">
+                  {isUzbek ? 'Jamoamiz' : 'Our Team'}
+                </p>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">
+                  {isUzbek ? "Tavsiya etilgan o'qituvchilar" : 'Featured Instructors'}
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 italic">
+                  {isUzbek
+                    ? "Maqsadlaringizga mos mentorlarni toping — Discover mentors who match your goals"
+                    : "Mentorlaringizni tanlang — Discover mentors who match your goals"}
+                </p>
               </div>
               <p className="text-xs text-slate-400 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-2 rounded-xl">
-                Click on a card to view details
+                {isUzbek ? "Batafsil ko'rish uchun kartani bosing" : 'Click on a card to view details'}
               </p>
             </div>
 
@@ -454,7 +496,9 @@ export default function TeachersPage() {
                   {/* Bottom info — always visible */}
                   <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
                     <h3 className="font-black text-white text-sm leading-tight mb-0.5">{teacher.name}</h3>
-                    <p className="text-blue-300 text-xs font-semibold mb-2">{teacher.specialization}</p>
+                    <p className="text-blue-300 text-xs font-semibold mb-2">
+                      {isUzbek ? teacher.specializationUz : teacher.specialization}
+                    </p>
 
                     {/* Stats row */}
                     <div className="flex items-center justify-between">
@@ -481,7 +525,7 @@ export default function TeachersPage() {
 
             <div className="text-center">
               <Button variant="outline" className="border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 h-11 px-8 rounded-xl font-semibold hover:border-blue-400 hover:text-blue-600 transition-all">
-                View All Faculty / Barchani ko'rish ↓
+                {isUzbek ? "Barcha o'qituvchilarni ko'rish" : 'View All Faculty'} ↓
               </Button>
             </div>
           </div>

@@ -1,3 +1,5 @@
+'use client'
+
 import {
   ArrowRight,
   GraduationCap,
@@ -10,6 +12,7 @@ import {
   Youtube,
 } from 'lucide-react'
 import Link from 'next/link'
+import { useIsUzbek } from './language-context'
 
 const programs = [
   { label: 'Web Development', labelUz: 'Veb Dasturlash', href: '/courses/web' },
@@ -36,6 +39,7 @@ const socials = [
 
 export function Footer() {
   const year = new Date().getFullYear()
+  const isUzbek = useIsUzbek()
 
   return (
     <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors duration-300">
@@ -46,17 +50,19 @@ export function Footer() {
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl px-8 py-8 md:py-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-blue-500/20">
             <div>
               <h3 className="text-white font-black text-xl md:text-2xl mb-1">
-                Ready to Start Your Journey?
+                {isUzbek ? 'Safaringizni boshlashga tayyormisiz?' : 'Ready to Start Your Journey?'}
               </h3>
               <p className="text-blue-200 text-sm">
-                Sayohatingizni boshlashga tayyormisiz? — Enroll today and transform your career.
+                {isUzbek
+                  ? "Bugunoq ro'yxatdan o'ting va martabangizni o'zgartiring."
+                  : "Sayohatingizni boshlashga tayyormisiz? — Enroll today and transform your career."}
               </p>
             </div>
             <Link
               href="/courses"
               className="shrink-0 flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-black text-sm px-6 py-3.5 rounded-xl transition-all hover:scale-105 shadow-md"
             >
-              Explore All Courses
+              {isUzbek ? "Barcha kurslarni ko'rish" : 'Explore All Courses'}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -107,7 +113,7 @@ export function Footer() {
           <div className="md:col-span-3">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" />
-              Programs
+              {isUzbek ? 'Dasturlar' : 'Programs'}
             </h3>
             <ul className="space-y-3">
               {programs.map((item) => (
@@ -119,7 +125,9 @@ export function Footer() {
                     <ArrowRight className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
                     <div>
                       <span className="font-medium">{item.label}</span>
-                      <span className="block text-xs text-slate-400 dark:text-slate-600 italic">{item.labelUz}</span>
+                      <span className="block text-xs text-slate-400 dark:text-slate-600 italic">
+                        {isUzbek ? item.labelUz : item.labelUz}
+                      </span>
                     </div>
                   </Link>
                 </li>
@@ -131,7 +139,7 @@ export function Footer() {
           <div className="md:col-span-2">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" />
-              Company
+              {isUzbek ? 'Kompaniya' : 'Company'}
             </h3>
             <ul className="space-y-3">
               {company.map((item) => (
@@ -143,7 +151,9 @@ export function Footer() {
                     <ArrowRight className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
                     <div>
                       <span className="font-medium">{item.label}</span>
-                      <span className="block text-xs text-slate-400 dark:text-slate-600 italic">{item.labelUz}</span>
+                      <span className="block text-xs text-slate-400 dark:text-slate-600 italic">
+                        {isUzbek ? item.labelUz : item.labelUz}
+                      </span>
                     </div>
                   </Link>
                 </li>
@@ -155,7 +165,7 @@ export function Footer() {
           <div className="md:col-span-3">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" />
-              Contact
+              {isUzbek ? 'Aloqa' : 'Contact'}
             </h3>
             <ul className="space-y-4">
               <li>
@@ -195,7 +205,9 @@ export function Footer() {
 
             {/* Newsletter mini */}
             <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">Newsletter / Yangiliklar</p>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
+                {isUzbek ? 'Yangiliklar' : 'Newsletter'}
+              </p>
               <div className="flex gap-2">
                 <input
                   type="email"
@@ -215,7 +227,9 @@ export function Footer() {
       <div className="border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-400 dark:text-slate-600 text-center sm:text-left">
-            © {year} IT-Park & Al-Kharazmi Academy. All rights reserved. / Barcha huquqlar himoyalangan.
+            {isUzbek
+              ? `© ${year} IT-Park & Al-Kharazmi Academy. Barcha huquqlar himoyalangan.`
+              : `© ${year} IT-Park & Al-Kharazmi Academy. All rights reserved.`}
           </p>
           <div className="flex items-center gap-6">
             {['Privacy Policy', 'Terms of Service', 'Safety Policy'].map((item) => (

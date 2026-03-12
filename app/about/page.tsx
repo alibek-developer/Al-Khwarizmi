@@ -1,5 +1,8 @@
+'use client'
+
 import { Footer } from '@/components/footer'
 import { Header } from '@/components/header'
+import { useIsUzbek } from '@/components/language-context'
 import {
   ArrowRight,
   BookOpen,
@@ -111,6 +114,7 @@ const values = [
    PAGE
 ───────────────────────────────────────── */
 export default function AboutPage() {
+  const isUzbek = useIsUzbek()
   return (
     <>
       <Header />
@@ -140,17 +144,22 @@ export default function AboutPage() {
                 </div>
 
                 <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 dark:text-white mb-6 leading-[1.02] tracking-tight">
-                  About<br />
+                  {isUzbek ? 'AL-Xorazmiy haqida' : 'About'}
+                  <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">
                     AL-Khorazmiy
                   </span>
                 </h1>
 
                 <p className="text-slate-600 dark:text-slate-300 text-lg mb-3 leading-relaxed max-w-lg">
-                  A leading educational center in Xorazm, dedicated to English, IT, and digital literacy — empowering the next generation of tech professionals.
+                  {isUzbek
+                    ? "Xorazmda ingliz tili, IT va raqamli savodxonlik bo'yicha yetakchi ta'lim markazi — kelgusi texnologiya mutaxassislarini tarbiyalaydi."
+                    : 'A leading educational center in Xorazm, dedicated to English, IT, and digital literacy — empowering the next generation of tech professionals.'}
                 </p>
                 <p className="text-slate-400 dark:text-slate-500 text-base italic mb-10 leading-relaxed max-w-lg">
-                  Xorazmda ingliz tili, IT va raqamli savodxonlik bo'yicha yetakchi ta'lim markazi — kelgusi texnologiya mutaxassislarini tarbiyalaydi.
+                  {isUzbek
+                    ? 'A leading educational center in Xorazm, dedicated to English, IT, and digital literacy — empowering the next generation of tech professionals.'
+                    : "Xorazmda ingliz tili, IT va raqamli savodxonlik bo'yicha yetakchi ta'lim markazi — kelgusi texnologiya mutaxassislarini tarbiyalaydi."}
                 </p>
 
                 {/* Quick facts */}
@@ -219,8 +228,12 @@ export default function AboutPage() {
                   <div className="text-4xl md:text-5xl font-black text-blue-600 mb-1 group-hover:scale-110 transition-transform duration-300">
                     {stat.number}
                   </div>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{stat.label}</p>
-                  <p className="text-xs text-slate-400 italic mt-0.5">{stat.labelUz}</p>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {isUzbek ? stat.labelUz : stat.label}
+                  </p>
+                  <p className="text-xs text-slate-400 italic mt-0.5">
+                    {isUzbek ? stat.label : stat.labelUz}
+                  </p>
                 </div>
               ))}
             </div>
@@ -236,21 +249,42 @@ export default function AboutPage() {
 
               {/* Left text */}
               <div>
-                <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-4">Our Story / Bizning Hikoya</p>
+                <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-4">
+                  {isUzbek ? 'Bizning hikoya' : 'Our Story'}
+                </p>
                 <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 leading-tight">
-                  Born in Xorazm,<br />
-                  <span className="text-slate-400 dark:text-slate-600 font-light">built for the future</span>
+                  {isUzbek ? 'Xorazmda tug‘ilgan,' : 'Born in Xorazm,'}
+                  <br />
+                  <span className="text-slate-400 dark:text-slate-600 font-light">
+                    {isUzbek ? 'kelajak uchun yaratilgan' : 'built for the future'}
+                  </span>
                 </h2>
 
                 <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
                   <p>
-                    AL-Khorazmiy was founded in <strong className="text-slate-900 dark:text-white">2023</strong> in Shovot, Xorazm with a clear mission: to bring world-class education directly to the heart of the region, eliminating the need for students to leave their homes to access quality tech training.
+                    {isUzbek ? (
+                      <>
+                        AL-Xorazmiy  <strong className="text-slate-900 dark:text-white">2023</strong>-yilda Xorazm viloyatining Shovot tumanida
+                        tashkil etilgan — maqsad: talabalar sifatli texnologiya ta'limi uchun uylarini tark etmasdan, jahon darajasidagi
+                        bilimga ega bo'lishi.
+                      </>
+                    ) : (
+                      <>
+                        AL-Khorazmiy was founded in <strong className="text-slate-900 dark:text-white">2023</strong> in Shovot, Xorazm with a clear
+                        mission: to bring world-class education directly to the heart of the region, eliminating the need for students to leave
+                        their homes to access quality tech training.
+                      </>
+                    )}
                   </p>
                   <p className="text-slate-400 italic">
-                    AL-Xorazmiy 2023-yilda Xorazm viloyatining Shovot tumanida tashkil etilgan — maqsad: talabalar sifatli texnologiya ta'limi uchun uylarini tark etmasdan, jahon darajasidagi bilimga ega bo'lishi.
+                    {isUzbek
+                      ? 'AL-Khorazmiy was founded in 2023 in Shovot, Xorazm with a clear mission: to bring world-class education directly to the region.'
+                      : "AL-Xorazmiy 2023-yilda Xorazm viloyatining Shovot tumanida tashkil etilgan — maqsad: talabalar sifatli texnologiya ta'limi uchun uylarini tark etmasdan, jahon darajasidagi bilimga ega bo'lishi."}
                   </p>
                   <p>
-                    Over <strong className="text-slate-900 dark:text-white">2 years</strong>, we have grown from a small classroom to a full-featured educational center offering English language, IT programming, and computer literacy — serving hundreds of students across the Xorazm region.
+                    {isUzbek
+                      ? "2 yildan ortiq vaqt davomida biz kichik sinfxonadan ingliz tili, IT dasturlash va kompyuter savodxonligini taklif qiluvchi to'liq markazga aylandik."
+                      : 'Over 2 years, we have grown from a small classroom to a full-featured educational center offering English language, IT programming, and computer literacy — serving hundreds of students across the Xorazm region.'}
                   </p>
                 </div>
 
@@ -318,9 +352,15 @@ export default function AboutPage() {
         <section className="py-20 bg-slate-50 dark:bg-slate-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-3">What We Teach / Nima O'rgatamiz</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">Our Core Programs</h2>
-              <p className="text-slate-400 italic text-sm">Asosiy Dasturlarimiz</p>
+              <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-3">
+                {isUzbek ? "Nima o'rgatamiz" : 'What We Teach'}
+              </p>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                {isUzbek ? 'Asosiy dasturlarimiz' : 'Our Core Programs'}
+              </h2>
+              <p className="text-slate-400 italic text-sm">
+                {isUzbek ? 'Our core programs' : 'Asosiy dasturlarimiz'}
+              </p>
             </div>
             <div className="grid md:grid-cols-3 gap-6">
               {programs.map((prog, idx) => {
@@ -331,10 +371,18 @@ export default function AboutPage() {
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <span className="text-[10px] font-black tracking-widest text-blue-600 dark:text-blue-400 uppercase mb-2 block">{prog.tag}</span>
-                    <h3 className="font-black text-slate-900 dark:text-white text-lg mb-0.5">{prog.title}</h3>
-                    <p className="text-blue-600 text-xs font-medium italic mb-3">{prog.titleUz}</p>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-2">{prog.desc}</p>
-                    <p className="text-slate-400 dark:text-slate-600 text-xs italic leading-relaxed">{prog.descUz}</p>
+                    <h3 className="font-black text-slate-900 dark:text-white text-lg mb-0.5">
+                      {isUzbek ? prog.titleUz : prog.title}
+                    </h3>
+                    <p className="text-blue-600 text-xs font-medium italic mb-3">
+                      {isUzbek ? prog.title : prog.titleUz}
+                    </p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-2">
+                      {isUzbek ? prog.descUz : prog.desc}
+                    </p>
+                    <p className="text-slate-400 dark:text-slate-600 text-xs italic leading-relaxed">
+                      {isUzbek ? prog.desc : prog.descUz}
+                    </p>
                   </div>
                 )
               })}
@@ -348,9 +396,15 @@ export default function AboutPage() {
         <section className="py-20 bg-white dark:bg-slate-950">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-3">Journey / Yo'l</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">Our Roadmap</h2>
-              <p className="text-slate-400 italic text-sm">Bizning yo'l xaritamiz</p>
+              <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-3">
+                {isUzbek ? "Yo'l" : 'Journey'}
+              </p>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                {isUzbek ? "Yo'l xaritamiz" : 'Our Roadmap'}
+              </h2>
+              <p className="text-slate-400 italic text-sm">
+                {isUzbek ? 'Our roadmap' : "Bizning yo'l xaritamiz"}
+              </p>
             </div>
 
             <div className="relative">
@@ -388,10 +442,18 @@ export default function AboutPage() {
                             {item.done ? '✓ Completed' : 'Upcoming'}
                           </span>
                         </div>
-                        <h3 className="font-black text-slate-900 dark:text-white mb-0.5">{item.title}</h3>
-                        <p className="text-blue-600 text-xs font-medium italic mb-2">{item.titleUz}</p>
-                        <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed max-w-xs">{item.desc}</p>
-                        <p className="text-slate-400 dark:text-slate-600 text-[11px] italic leading-relaxed mt-1 max-w-xs">{item.descUz}</p>
+                        <h3 className="font-black text-slate-900 dark:text-white mb-0.5">
+                          {isUzbek ? item.titleUz : item.title}
+                        </h3>
+                        <p className="text-blue-600 text-xs font-medium italic mb-2">
+                          {isUzbek ? item.title : item.titleUz}
+                        </p>
+                        <p className="text-slate-500 dark:text-slate-400 text-xs leading-relaxed max-w-xs">
+                          {isUzbek ? item.descUz : item.desc}
+                        </p>
+                        <p className="text-slate-400 dark:text-slate-600 text-[11px] italic leading-relaxed mt-1 max-w-xs">
+                          {isUzbek ? item.desc : item.descUz}
+                        </p>
                       </div>
                     </div>
 
@@ -411,9 +473,15 @@ export default function AboutPage() {
         <section className="py-20 bg-slate-50 dark:bg-slate-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-14">
-              <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-3">What We Stand For / Qadriyatlarimiz</p>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">Our Core Values</h2>
-              <p className="text-slate-400 italic text-sm">Asosiy qadriyatlarimiz</p>
+              <p className="text-blue-600 text-xs font-black tracking-widest uppercase mb-3">
+                {isUzbek ? 'Qadriyatlarimiz' : 'What We Stand For'}
+              </p>
+              <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2">
+                {isUzbek ? 'Asosiy qadriyatlarimiz' : 'Our Core Values'}
+              </h2>
+              <p className="text-slate-400 italic text-sm">
+                {isUzbek ? 'Our core values' : 'Asosiy qadriyatlarimiz'}
+              </p>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {values.map((val, idx) => {
@@ -427,9 +495,15 @@ export default function AboutPage() {
                     <div className="w-11 h-11 bg-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-md shadow-blue-500/30 group-hover:scale-110 transition-transform">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
-                    <h3 className="font-black text-slate-900 dark:text-white mb-0.5">{val.title}</h3>
-                    <p className="text-blue-600 text-xs italic font-medium mb-2">{val.titleUz}</p>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">{val.desc}</p>
+                    <h3 className="font-black text-slate-900 dark:text-white mb-0.5">
+                      {isUzbek ? val.titleUz : val.title}
+                    </h3>
+                    <p className="text-blue-600 text-xs italic font-medium mb-2">
+                      {isUzbek ? val.title : val.titleUz}
+                    </p>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed">
+                      {val.desc}
+                    </p>
                   </div>
                 )
               })}
@@ -447,13 +521,18 @@ export default function AboutPage() {
           <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid lg:grid-cols-2 gap-14 items-center">
               <div>
-                <p className="text-blue-200 text-xs font-black tracking-widest uppercase mb-4">How We Teach / Qanday O'qitamiz</p>
+                <p className="text-blue-200 text-xs font-black tracking-widest uppercase mb-4">
+                  {isUzbek ? "Qanday o'qitamiz" : 'How We Teach'}
+                </p>
                 <h2 className="text-3xl md:text-4xl font-black text-white mb-10 leading-tight">
-                  Learning by Doing —<br />
-                  <span className="text-blue-200 font-light">Amaliyotga asoslangan ta'lim</span>
+                  {isUzbek ? "Amaliyot orqali o'rganish —" : 'Learning by Doing —'}
+                  <br />
+                  <span className="text-blue-200 font-light">
+                    {isUzbek ? "Practice-based learning" : "Amaliyotga asoslangan ta'lim"}
+                  </span>
                 </h2>
                 <div className="space-y-6">
-                  {[
+                    {[
                     { icon: BookOpen, title: 'Project-Based Learning', titleUz: 'Loyihaga Asoslangan', desc: 'Students build real projects from day one — English conversations, coding exercises, and digital tasks.', descUz: 'Talabalar birinchi kundan boshlab haqiqiy loyihalar yaratadi.' },
                     { icon: Users, title: 'Mentorship & Community', titleUz: 'Mentorlik va Hamjamiyat', desc: 'Small class sizes ensure every student gets personal attention from qualified teachers.', descUz: 'Kichik guruhlar — har bir talabaga individual e\'tibor.' },
                     { icon: TrendingUp, title: 'Career Readiness', titleUz: 'Kasbga Tayyorlik', desc: 'Every skill we teach is tied to real employment outcomes in tech, business, and beyond.', descUz: 'Har bir ko\'nikma haqiqiy ish imkoniyatiga bog\'langan.' },
@@ -465,9 +544,15 @@ export default function AboutPage() {
                           <Icon className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <h4 className="font-black text-white mb-0.5">{item.title}</h4>
-                          <p className="text-blue-200 text-xs italic font-medium mb-1">{item.titleUz}</p>
-                          <p className="text-blue-100/70 text-sm leading-relaxed">{item.desc}</p>
+                          <h4 className="font-black text-white mb-0.5">
+                            {isUzbek ? item.titleUz : item.title}
+                          </h4>
+                          <p className="text-blue-200 text-xs italic font-medium mb-1">
+                            {isUzbek ? item.title : item.titleUz}
+                          </p>
+                          <p className="text-blue-100/70 text-sm leading-relaxed">
+                            {isUzbek ? item.descUz : item.desc}
+                          </p>
                         </div>
                       </div>
                     )
