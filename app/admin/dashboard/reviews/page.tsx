@@ -769,7 +769,7 @@ export default function ReviewsPage() {
 							onClick={fetchReviews}
 							className='text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold'
 						>
-							Yangilash
+							Yangilash.
 						</button>
 					)}
 				</div>
