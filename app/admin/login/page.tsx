@@ -1,15 +1,15 @@
-'use client';
+'use client'
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 // Eski /admin/login URL'ini /login ga yo'naltiradi
 export default function AdminLoginRedirect() {
-  const router = useRouter();
+	const router = useRouter()
 
-  useEffect(() => {
-    router.replace('/login');
-  }, [router]);
+	useEffect(() => {
+		router.replace('/login')
+	}, [router])
 
-  return null;
+	return null
 }
