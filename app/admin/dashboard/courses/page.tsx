@@ -131,12 +131,19 @@ export default function CoursesPage() {
 	const [viewItem, setViewItem] = useState<Course | null>(null)
 	const [deleteItem, setDeleteItem] = useState<Course | null>(null)
 	const [imgPreview, setImgPreview] = useState('')
+	const mentors = [
+		'Tulkin Rajabbaev',
+		'Sarah Jenkins',
+		'Elena Rodriguez',
+		'Michael Volkov',
+	]
 	const [form, setForm] = useState({
 		name: '',
 		nameUz: '',
 		duration: '',
 		level: '',
 		revenue: '',
+		mentor: '',
 	})
 
 	const filtered = courses.filter(c =>
@@ -164,7 +171,14 @@ export default function CoursesPage() {
 			},
 		])
 		setShowAdd(false)
-		setForm({ name: '', nameUz: '', duration: '', level: '', revenue: '' })
+		setForm({
+			name: '',
+			nameUz: '',
+			duration: '',
+			level: '',
+			revenue: '',
+			mentor: '',
+		})
 		setImgPreview('')
 	}
 
@@ -282,6 +296,69 @@ export default function CoursesPage() {
 								}
 							/>
 						</div>
+
+						{/* Mentor */}
+						<div>
+							<label className={labelCls}>O'qituvchi biriktirish</label>
+							<div className='relative'>
+								<select
+									className={inputCls + ' pr-8 appearance-none'}
+									value={form.mentor}
+									onChange={e =>
+										setForm(p => ({ ...p, mentor: e.target.value }))
+									}
+								>
+									<option value=''>O'qituvchi tanlang</option>
+									{mentors.map(m => (
+										<option key={m} value={m}>
+											{m}
+										</option>
+									))}
+								</select>
+								<svg
+									className='absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none'
+									fill='none'
+									stroke='currentColor'
+									viewBox='0 0 24 24'
+								>
+									<path
+										strokeLinecap='round'
+										strokeLinejoin='round'
+										strokeWidth={2}
+										d='M19 9l-7 7-7-7'
+									/>
+								</svg>
+							</div>
+							{form.mentor && (
+								<div className='mt-2 flex items-center gap-2.5 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl px-3 py-2'>
+									<div className='w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0'>
+										<span className='text-white text-[9px] font-black'>
+											{form.mentor
+												.split(' ')
+												.map(w => w[0])
+												.join('')
+												.slice(0, 2)}
+										</span>
+									</div>
+									<div className='flex-1 min-w-0'>
+										<p className='text-xs font-bold text-blue-700 dark:text-blue-300 truncate'>
+											{form.mentor}
+										</p>
+										<p className='text-[10px] text-blue-500 dark:text-blue-400'>
+											Biriktirildi ✓
+										</p>
+									</div>
+									<button
+										type='button'
+										onClick={() => setForm(p => ({ ...p, mentor: '' }))}
+										className='text-blue-400 hover:text-blue-600 transition-colors shrink-0'
+									>
+										<X className='w-3.5 h-3.5' />
+									</button>
+								</div>
+							)}
+						</div>
+
 						<div className='flex gap-3 pt-2'>
 							<button
 								onClick={() => setShowAdd(false)}
