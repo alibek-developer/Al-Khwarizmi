@@ -277,22 +277,72 @@ function DaysPicker({
 				.map(d => d.trim())
 				.filter(Boolean)
 		: []
+
 	const toggle = (d: string) => {
 		const next = sel.includes(d) ? sel.filter(x => x !== d) : [...sel, d]
 		onChange(weekDays.filter(x => next.includes(x)).join(', '))
 	}
+
+	// Tezkor presetlar
+	const presets = [
+		{
+			label: 'Du-Cho-Ju',
+			days: ['Du', 'Cho', 'Ju'],
+			color:
+				'bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-500/25',
+		},
+		{
+			label: 'Se-Pa-Sha',
+			days: ['Se', 'Pa', 'Sha'],
+			color:
+				'bg-cyan-100 dark:bg-cyan-500/15 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-200 dark:hover:bg-cyan-500/25',
+		},
+		{
+			label: 'Har kun',
+			days: ['Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha'],
+			color:
+				'bg-emerald-100 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-500/25',
+		},
+		{
+			label: 'Tozalash',
+			days: [],
+			color:
+				'bg-red-100 dark:bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-500/25',
+		},
+	]
+
+	const applyPreset = (days: string[]) => {
+		onChange(weekDays.filter(x => days.includes(x)).join(', '))
+	}
+
 	return (
-		<div className='flex gap-1.5'>
-			{weekDays.map(d => (
-				<button
-					key={d}
-					type='button'
-					onClick={() => toggle(d)}
-					className={`w-10 h-9 rounded-xl text-xs font-bold transition-all ${sel.includes(d) ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
-				>
-					{d}
-				</button>
-			))}
+		<div className='space-y-2'>
+			{/* Preset tugmalar */}
+			<div className='flex gap-1.5 flex-wrap'>
+				{presets.map(p => (
+					<button
+						key={p.label}
+						type='button'
+						onClick={() => applyPreset(p.days)}
+						className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${p.color}`}
+					>
+						{p.label}
+					</button>
+				))}
+			</div>
+			{/* Alohida kunlar */}
+			<div className='flex gap-1.5'>
+				{weekDays.map(d => (
+					<button
+						key={d}
+						type='button'
+						onClick={() => toggle(d)}
+						className={`w-10 h-9 rounded-xl text-xs font-bold transition-all ${sel.includes(d) ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+					>
+						{d}
+					</button>
+				))}
+			</div>
 		</div>
 	)
 }
