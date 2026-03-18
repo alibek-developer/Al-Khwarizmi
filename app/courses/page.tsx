@@ -23,7 +23,6 @@ import {
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
-// ─── Supabase ──────────────────────────────────────────────────────────────
 const supabase = createClient(
 	process.env.NEXT_PUBLIC_SUPABASE_URL!,
 	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -52,11 +51,9 @@ type Course = {
 	image_url: string
 	badge: string
 	rating: number
-	// joined
 	mentor?: Mentor | null
 }
 
-// ─── Badge colors ──────────────────────────────────────────────────────────
 const badgeColorMap: Record<string, string> = {
 	HOT: 'bg-red-500',
 	NEW: 'bg-blue-500',
@@ -75,6 +72,11 @@ const levelColorMap: Record<string, string> = {
 	'A1–C1': 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400',
 }
 
+const inputCls =
+	'w-full h-11 px-4 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60'
+const labelCls =
+	'block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5'
+
 function LevelBadge({ level }: { level: string }) {
 	return (
 		<span
@@ -85,7 +87,6 @@ function LevelBadge({ level }: { level: string }) {
 	)
 }
 
-// ─── Skeleton card ─────────────────────────────────────────────────────────
 function SkeletonCard() {
 	return (
 		<div className='bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-pulse'>
@@ -97,7 +98,6 @@ function SkeletonCard() {
 				</div>
 				<div className='h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded' />
 				<div className='h-3 w-full bg-slate-200 dark:bg-slate-700 rounded' />
-				<div className='h-3 w-4/5 bg-slate-200 dark:bg-slate-700 rounded' />
 				<div className='h-10 bg-slate-100 dark:bg-slate-700/50 rounded-xl' />
 			</div>
 		</div>
@@ -112,10 +112,23 @@ function EnrollModal({
 	course: Course
 	onClose: () => void
 }) {
-	const [form, setForm] = useState({ name: '', phone: '', email: '' })
+	const [form, setForm] = useState({
+		last_name: '',
+		first_name: '',
+		father_name: '',
+		birth_date: '',
+		phone: '',
+		parent_phone: '',
+		certificate_id: '',
+		pinfl: '',
+	})
 	const [submitting, setSubmitting] = useState(false)
 	const [success, setSuccess] = useState(false)
 	const overlayRef = useRef<HTMLDivElement>(null)
+
+	const set =
+		(key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+			setForm(p => ({ ...p, [key]: e.target.value }))
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
@@ -132,19 +145,21 @@ function EnrollModal({
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setSubmitting(true)
-		// Insert enrollment into Supabase (optional enrollments table)
-		await supabase
-			.from('enrollments')
-			.insert([
-				{
-					course_id: course.id,
-					full_name: form.name,
-					phone: form.phone,
-					email: form.email || null,
-				},
-			])
-			.then(() => {})
-		await new Promise(r => setTimeout(r, 800))
+		await supabase.from('students').insert([
+			{
+				first_name: form.first_name,
+				last_name: form.last_name,
+				father_name: form.father_name || null,
+				birth_date: form.birth_date || null,
+				phone: form.phone,
+				parent_phone: form.parent_phone || null,
+				certificate_id: form.certificate_id || null,
+				pinfl: form.pinfl || null,
+				course_id: course.id,
+				payment_amount: course.price || 0,
+				status: 'pending',
+			},
+		])
 		setSubmitting(false)
 		setSuccess(true)
 	}
@@ -161,9 +176,9 @@ function EnrollModal({
 			style={{ animation: 'fadeIn .18s ease' }}
 		>
 			<style>{`
-        @keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
-        @keyframes slideUp { from { opacity:0; transform:translateY(20px) scale(.97) } to { opacity:1; transform:translateY(0) scale(1) } }
-      `}</style>
+				@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+				@keyframes slideUp { from { opacity:0; transform:translateY(20px) scale(.97) } to { opacity:1; transform:translateY(0) scale(1) } }
+			`}</style>
 
 			<div
 				className='relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden'
@@ -171,7 +186,7 @@ function EnrollModal({
 			>
 				<button
 					onClick={onClose}
-					className='absolute top-4 right-4 z-10 w-9 h-9 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all'
+					className='absolute top-4 right-4 z-10 w-9 h-9 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl flex items-center justify-center text-white transition-all'
 				>
 					<X className='w-4 h-4' />
 				</button>
@@ -241,7 +256,7 @@ function EnrollModal({
 				</div>
 
 				{/* Form / Success */}
-				<div className='p-6'>
+				<div className='p-6 overflow-y-auto max-h-[60vh]'>
 					{success ? (
 						<div className='text-center py-6'>
 							<div className='w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4'>
@@ -273,54 +288,106 @@ function EnrollModal({
 									Enroll in this course — fill in your details below
 								</p>
 							</div>
+
 							<form onSubmit={handleSubmit} className='space-y-4'>
-								<div className='grid sm:grid-cols-2 gap-4'>
+								{/* Ism ma'lumotlari */}
+								<div className='grid grid-cols-3 gap-3'>
 									<div>
-										<label className='block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5'>
-											To'liq ism *
-										</label>
+										<label className={labelCls}>Familiya *</label>
 										<input
 											required
-											placeholder='Ism Familiya'
-											value={form.name}
-											onChange={e =>
-												setForm(p => ({ ...p, name: e.target.value }))
-											}
+											className={inputCls}
+											placeholder='Karimov'
+											value={form.last_name}
+											onChange={set('last_name')}
 											disabled={submitting}
-											className='w-full h-11 px-4 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60'
 										/>
 									</div>
 									<div>
-										<label className='block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5'>
-											Telefon *
-										</label>
+										<label className={labelCls}>Ism *</label>
 										<input
 											required
-											type='tel'
-											placeholder='+998 90 000 00 00'
-											value={form.phone}
-											onChange={e =>
-												setForm(p => ({ ...p, phone: e.target.value }))
-											}
+											className={inputCls}
+											placeholder='Jasur'
+											value={form.first_name}
+											onChange={set('first_name')}
 											disabled={submitting}
-											className='w-full h-11 px-4 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60'
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>Otasining ismi</label>
+										<input
+											className={inputCls}
+											placeholder='Aliyevich'
+											value={form.father_name}
+											onChange={set('father_name')}
+											disabled={submitting}
 										/>
 									</div>
 								</div>
+
+								{/* Tug'ilgan sana + Telefon */}
+								<div className='grid grid-cols-2 gap-3'>
+									<div>
+										<label className={labelCls}>Tug'ilgan sana</label>
+										<input
+											type='date'
+											className={inputCls}
+											value={form.birth_date}
+											onChange={set('birth_date')}
+											disabled={submitting}
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>Telefon *</label>
+										<input
+											required
+											type='tel'
+											className={inputCls}
+											placeholder='+998 90 000 00 00'
+											value={form.phone}
+											onChange={set('phone')}
+											disabled={submitting}
+										/>
+									</div>
+								</div>
+
+								{/* Ota-ona telefoni */}
 								<div>
-									<label className='block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5'>
-										Email (ixtiyoriy)
-									</label>
+									<label className={labelCls}>Ota-ona telefoni</label>
 									<input
-										type='email'
-										placeholder='email@gmail.com'
-										value={form.email}
-										onChange={e =>
-											setForm(p => ({ ...p, email: e.target.value }))
-										}
+										type='tel'
+										className={inputCls}
+										placeholder='+998 90 000 00 00'
+										value={form.parent_phone}
+										onChange={set('parent_phone')}
 										disabled={submitting}
-										className='w-full h-11 px-4 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60'
 									/>
+								</div>
+
+								{/* Guvohnoma + PINFL */}
+								<div className='grid grid-cols-2 gap-3'>
+									<div>
+										<label className={labelCls}>Guvohnoma raqami</label>
+										<input
+											className={inputCls}
+											placeholder='AA1234567'
+											value={form.certificate_id}
+											onChange={set('certificate_id')}
+											disabled={submitting}
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>PINFL (JSHSHR)</label>
+										<input
+											className={inputCls}
+											placeholder='12345678901234'
+											maxLength={14}
+											value={form.pinfl}
+											onChange={set('pinfl')}
+											disabled={submitting}
+										/>
+									</div>
 								</div>
 
 								{/* Mentor row */}
@@ -361,6 +428,7 @@ function EnrollModal({
 									</div>
 								)}
 
+								{/* Price + Submit */}
 								<div className='flex items-center justify-between pt-1'>
 									<div>
 										<p className='text-xs text-slate-400'>Kurs narxi</p>
@@ -370,7 +438,12 @@ function EnrollModal({
 									</div>
 									<button
 										type='submit'
-										disabled={submitting || !form.name || !form.phone}
+										disabled={
+											submitting ||
+											!form.first_name ||
+											!form.last_name ||
+											!form.phone
+										}
 										className='flex items-center gap-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-black text-sm h-12 px-8 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/25 disabled:shadow-none'
 									>
 										{submitting ? (
@@ -406,7 +479,6 @@ export default function CoursesPage() {
 	const [activeLevel, setActiveLevel] = useState('All Levels')
 	const [showFilters, setShowFilters] = useState(false)
 
-	// Fetch courses + mentors joined
 	useEffect(() => {
 		const fetchData = async () => {
 			setLoading(true)
@@ -414,13 +486,11 @@ export default function CoursesPage() {
 				.from('courses')
 				.select('*')
 				.order('created_at', { ascending: false })
-
 			if (!coursesData) {
 				setLoading(false)
 				return
 			}
 
-			// Fetch mentors
 			const mentorIds = [
 				...new Set(coursesData.map(c => c.mentor_id).filter(Boolean)),
 			]
@@ -435,17 +505,17 @@ export default function CoursesPage() {
 				})
 			}
 
-			const merged: Course[] = coursesData.map(c => ({
-				...c,
-				mentor: c.mentor_id ? mentorMap[c.mentor_id] || null : null,
-			}))
-			setCourses(merged)
+			setCourses(
+				coursesData.map(c => ({
+					...c,
+					mentor: c.mentor_id ? mentorMap[c.mentor_id] || null : null,
+				})),
+			)
 			setLoading(false)
 		}
 		fetchData()
 	}, [])
 
-	// Dynamic categories from data
 	const categories = useMemo(() => {
 		const levels = [...new Set(courses.map(c => c.level).filter(Boolean))]
 		return [
@@ -456,17 +526,20 @@ export default function CoursesPage() {
 
 	const levels = ['All Levels', 'Beginner', 'Intermediate', 'Advanced']
 
-	const filtered = useMemo(() => {
-		return courses.filter(c => {
-			const matchCat = activeCategory === 'all' || c.level === activeCategory
-			const matchLevel = activeLevel === 'All Levels' || c.level === activeLevel
-			const matchSearch =
-				search === '' ||
-				c.title_en?.toLowerCase().includes(search.toLowerCase()) ||
-				c.title_uz?.toLowerCase().includes(search.toLowerCase())
-			return matchCat && matchLevel && matchSearch
-		})
-	}, [courses, activeCategory, activeLevel, search])
+	const filtered = useMemo(
+		() =>
+			courses.filter(c => {
+				const matchCat = activeCategory === 'all' || c.level === activeCategory
+				const matchLevel =
+					activeLevel === 'All Levels' || c.level === activeLevel
+				const matchSearch =
+					search === '' ||
+					c.title_en?.toLowerCase().includes(search.toLowerCase()) ||
+					c.title_uz?.toLowerCase().includes(search.toLowerCase())
+				return matchCat && matchLevel && matchSearch
+			}),
+		[courses, activeCategory, activeLevel, search],
+	)
 
 	const totalStudents = courses.reduce((a, c) => a + (c.total_students || 0), 0)
 
@@ -515,8 +588,6 @@ export default function CoursesPage() {
 									? 'Carefully curated programs designed by industry experts.'
 									: 'Sanoat ekspertlari tomonidan tuzilgan dasturlar — martabangizni tezlashtirish uchun.'}
 							</p>
-
-							{/* Quick stats from DB */}
 							<div className='flex flex-wrap gap-4'>
 								{[
 									{
@@ -677,7 +748,6 @@ export default function CoursesPage() {
 										className='group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer'
 										style={{ animationDelay: `${idx * 50}ms` }}
 									>
-										{/* Image */}
 										<div className='relative h-48 overflow-hidden bg-slate-200 dark:bg-slate-700'>
 											{course.image_url ? (
 												<img
@@ -691,7 +761,6 @@ export default function CoursesPage() {
 												</div>
 											)}
 											<div className='absolute inset-0 bg-gradient-to-t from-slate-900/30 to-transparent' />
-
 											{course.badge && (
 												<span
 													className={`absolute top-3 left-3 ${badgeColorMap[course.badge] || 'bg-slate-500'} text-white text-[10px] font-black px-2.5 py-1 rounded-lg tracking-wider`}
@@ -699,15 +768,12 @@ export default function CoursesPage() {
 													{course.badge}
 												</span>
 											)}
-
 											<div className='absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-lg px-2.5 py-1 flex items-center gap-1.5 shadow-sm'>
 												<BookOpen className='w-3 h-3 text-blue-600' />
 												<span className='text-[10px] font-bold text-slate-800 dark:text-white'>
 													{course.lessons_count || 0} dars
 												</span>
 											</div>
-
-											{/* Hover overlay */}
 											<div className='absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/15 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100'>
 												<span className='bg-white text-blue-700 text-xs font-black px-5 py-2.5 rounded-xl shadow-xl translate-y-2 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2'>
 													<GraduationCap className='w-3.5 h-3.5' /> Kursga
@@ -716,7 +782,6 @@ export default function CoursesPage() {
 											</div>
 										</div>
 
-										{/* Body */}
 										<div className='p-5'>
 											<div className='flex items-center gap-2 mb-3'>
 												{course.level && <LevelBadge level={course.level} />}
@@ -727,7 +792,6 @@ export default function CoursesPage() {
 													</span>
 												)}
 											</div>
-
 											<h3 className='font-black text-slate-900 dark:text-white mb-0.5 text-sm leading-snug line-clamp-2'>
 												{isUzbek && course.title_uz
 													? course.title_uz
@@ -738,8 +802,6 @@ export default function CoursesPage() {
 													? course.title_en
 													: course.title_uz}
 											</p>
-
-											{/* Meta */}
 											<div className='flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-4'>
 												<span className='flex items-center gap-1.5 bg-slate-50 dark:bg-slate-700 px-2.5 py-1 rounded-lg'>
 													<Users className='w-3 h-3' />{' '}
@@ -752,8 +814,6 @@ export default function CoursesPage() {
 													</span>
 												</span>
 											</div>
-
-											{/* Footer */}
 											<div className='flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700'>
 												{course.mentor ? (
 													<div className='flex items-center gap-2 min-w-0'>

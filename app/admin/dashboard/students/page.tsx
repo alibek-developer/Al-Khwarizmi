@@ -5,8 +5,11 @@ import {
 	AlertCircle,
 	CheckCircle2,
 	Clock,
+	Download,
 	Edit2,
 	Eye,
+	FileSpreadsheet,
+	FileText,
 	Loader2,
 	MoreHorizontal,
 	Search,
@@ -14,9 +17,8 @@ import {
 	UserPlus,
 	X,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-// ─── Supabase client ───────────────────────────────────────────────────────
 const supabase = createClient(
 	process.env.NEXT_PUBLIC_SUPABASE_URL!,
 	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,9 +27,14 @@ const supabase = createClient(
 // ─── Types ─────────────────────────────────────────────────────────────────
 type StudentRow = {
 	id: number
-	full_name: string
+	first_name: string
+	last_name: string
+	father_name: string
+	birth_date: string
 	phone: string
-	email: string
+	parent_phone: string
+	certificate_id: string
+	pinfl: string
 	course_id: number
 	payment_amount: number
 	status: string
@@ -36,16 +43,23 @@ type StudentRow = {
 
 type Student = {
 	id: number
-	name: string
-	email: string
+	first_name: string
+	last_name: string
+	father_name: string
+	full_name: string
+	birth_date: string
 	phone: string
+	parent_phone: string
+	certificate_id: string
+	pinfl: string
 	course: string
+	course_id: number
+	payment_amount: number
 	date: string
 	status: string
 	paid: string
 	avatar: string
 	color: string
-	course_id: number
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -97,12 +111,21 @@ const labelCls =
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function rowToStudent(row: StudentRow, idx: number): Student {
+	const full_name = [row.first_name, row.last_name].filter(Boolean).join(' ')
 	return {
 		id: row.id,
-		name: row.full_name,
-		email: row.email,
-		phone: row.phone,
+		first_name: row.first_name || '',
+		last_name: row.last_name || '',
+		father_name: row.father_name || '',
+		full_name,
+		birth_date: row.birth_date || '',
+		phone: row.phone || '',
+		parent_phone: row.parent_phone || '',
+		certificate_id: row.certificate_id || '',
+		pinfl: row.pinfl || '',
 		course: COURSE_MAP[row.course_id] ?? `Kurs ${row.course_id}`,
+		course_id: row.course_id,
+		payment_amount: row.payment_amount || 0,
 		date: new Date(row.created_at).toLocaleDateString('uz-UZ', {
 			day: 'numeric',
 			month: 'short',
@@ -110,14 +133,14 @@ function rowToStudent(row: StudentRow, idx: number): Student {
 		}),
 		status: row.status,
 		paid: row.payment_amount ? `$${row.payment_amount}` : '$0',
-		avatar: row.full_name
-			.split(' ')
-			.map((w: string) => w[0])
-			.join('')
-			.slice(0, 2)
-			.toUpperCase(),
+		avatar:
+			full_name
+				.split(' ')
+				.map((w: string) => w[0])
+				.join('')
+				.slice(0, 2)
+				.toUpperCase() || '??',
 		color: colors[idx % colors.length],
-		course_id: row.course_id,
 	}
 }
 
@@ -125,8 +148,7 @@ function rowToStudent(row: StudentRow, idx: number): Student {
 function Toast({ msg, type }: { msg: string; type: 'success' | 'error' }) {
 	return (
 		<div
-			className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white transition-all
-			${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
+			className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
 		>
 			{type === 'success' ? (
 				<CheckCircle2 className='w-4 h-4' />
@@ -154,7 +176,7 @@ function Modal({
 			onClick={onClose}
 		>
 			<div
-				className='w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col'
+				className='w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 max-h-[90vh] flex flex-col'
 				onClick={e => e.stopPropagation()}
 			>
 				<div className='flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0'>
@@ -174,6 +196,381 @@ function Modal({
 	)
 }
 
+// ─── ActionMenu ─────────────────────────────────────────────────────────────
+function ActionMenu({
+	student,
+	onView,
+	onEdit,
+	onDelete,
+}: {
+	student: Student
+	onView: () => void
+	onEdit: () => void
+	onDelete: () => void
+}) {
+	const [open, setOpen] = useState(false)
+	const [pos, setPos] = useState({ top: 0, right: 0 })
+
+	const handleOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
+		const rect = e.currentTarget.getBoundingClientRect()
+		setPos({
+			top: rect.bottom + window.scrollY + 4,
+			right: window.innerWidth - rect.right,
+		})
+		setOpen(v => !v)
+	}
+
+	useEffect(() => {
+		if (!open) return
+		const close = () => setOpen(false)
+		document.addEventListener('click', close)
+		return () => document.removeEventListener('click', close)
+	}, [open])
+
+	return (
+		<div onClick={e => e.stopPropagation()}>
+			<button
+				onClick={handleOpen}
+				className='w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors'
+			>
+				<MoreHorizontal className='w-4 h-4' />
+			</button>
+			{open && (
+				<div
+					className='fixed w-36 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl z-[999] py-1'
+					style={{ top: pos.top, right: pos.right }}
+				>
+					<button
+						onClick={() => {
+							onView()
+							setOpen(false)
+						}}
+						className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors'
+					>
+						<Eye className='w-3.5 h-3.5' /> Ko'rish
+					</button>
+					<button
+						onClick={() => {
+							onEdit()
+							setOpen(false)
+						}}
+						className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors'
+					>
+						<Edit2 className='w-3.5 h-3.5' /> Tahrirlash
+					</button>
+					<button
+						onClick={() => {
+							onDelete()
+							setOpen(false)
+						}}
+						className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors'
+					>
+						<Trash2 className='w-3.5 h-3.5' /> O'chirish
+					</button>
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ─── Export Button ──────────────────────────────────────────────────────────
+function ExportMenu({ students }: { students: Student[] }) {
+	const [open, setOpen] = useState(false)
+	const ref = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		if (!open) return
+		const close = (e: MouseEvent) => {
+			if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+		}
+		document.addEventListener('mousedown', close)
+		return () => document.removeEventListener('mousedown', close)
+	}, [open])
+
+	const exportCSV = () => {
+		const headers = [
+			'#',
+			'Ism',
+			'Familiya',
+			'Otasining ismi',
+			"Tug'ilgan sana",
+			'Telefon',
+			'Ota-ona telefoni',
+			'Guvohnoma raqami',
+			'PINFL',
+			'Kurs',
+			'Holat',
+			"To'lov",
+			'Sana',
+		]
+		const rows = students.map((s, i) => [
+			i + 1,
+			s.first_name,
+			s.last_name,
+			s.father_name,
+			s.birth_date,
+			s.phone,
+			s.parent_phone,
+			s.certificate_id,
+			s.pinfl,
+			s.course,
+			s.status,
+			s.paid,
+			s.date,
+		])
+		const csv = [headers, ...rows]
+			.map(r =>
+				r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','),
+			)
+			.join('\n')
+		const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+		const url = URL.createObjectURL(blob)
+		const a = document.createElement('a')
+		a.href = url
+		a.download = `talabalar_${new Date().toISOString().slice(0, 10)}.csv`
+		a.click()
+		URL.revokeObjectURL(url)
+		setOpen(false)
+	}
+
+	const exportGoogleSheets = () => {
+		// CSV yuklab olib, Google Sheets ga ochish uchun link
+		const headers = [
+			'#',
+			'Ism',
+			'Familiya',
+			'Otasining ismi',
+			"Tug'ilgan sana",
+			'Telefon',
+			'Ota-ona telefoni',
+			'Guvohnoma raqami',
+			'PINFL',
+			'Kurs',
+			'Holat',
+			"To'lov",
+			'Sana',
+		]
+		const rows = students.map((s, i) => [
+			i + 1,
+			s.first_name,
+			s.last_name,
+			s.father_name,
+			s.birth_date,
+			s.phone,
+			s.parent_phone,
+			s.certificate_id,
+			s.pinfl,
+			s.course,
+			s.status,
+			s.paid,
+			s.date,
+		])
+		const csv = [headers, ...rows]
+			.map(r =>
+				r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','),
+			)
+			.join('\n')
+		const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+		const url = URL.createObjectURL(blob)
+		const a = document.createElement('a')
+		a.href = url
+		a.download = `talabalar_${new Date().toISOString().slice(0, 10)}.csv`
+		a.click()
+		URL.revokeObjectURL(url)
+		// Google Sheets ochish
+		setTimeout(() => {
+			window.open('https://sheets.new', '_blank')
+		}, 500)
+		setOpen(false)
+	}
+
+	return (
+		<div className='relative' ref={ref}>
+			<button
+				onClick={() => setOpen(v => !v)}
+				className='flex items-center gap-2 h-9 px-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-bold hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm'
+			>
+				<Download className='w-3.5 h-3.5' /> Eksport
+			</button>
+			{open && (
+				<div className='absolute right-0 top-full mt-2 w-52 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-50 py-2 overflow-hidden'>
+					<button
+						onClick={exportCSV}
+						className='w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left'
+					>
+						<div className='w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center shrink-0 mt-0.5'>
+							<FileText className='w-4 h-4 text-emerald-600 dark:text-emerald-400' />
+						</div>
+						<div>
+							<p className='text-xs font-bold text-slate-900 dark:text-white'>
+								CSV yuklab olish
+							</p>
+							<p className='text-[10px] text-slate-400 mt-0.5'>
+								Excel da ochish uchun
+							</p>
+						</div>
+					</button>
+					<button
+						onClick={exportGoogleSheets}
+						className='w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-left'
+					>
+						<div className='w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center shrink-0 mt-0.5'>
+							<FileSpreadsheet className='w-4 h-4 text-blue-600 dark:text-blue-400' />
+						</div>
+						<div>
+							<p className='text-xs font-bold text-slate-900 dark:text-white'>
+								Google Sheets
+							</p>
+							<p className='text-[10px] text-slate-400 mt-0.5'>
+								Spreadsheetga yuboradi
+							</p>
+						</div>
+					</button>
+				</div>
+			)}
+		</div>
+	)
+}
+
+// ─── Student Form ───────────────────────────────────────────────────────────
+type FormState = {
+	first_name: string
+	last_name: string
+	father_name: string
+	birth_date: string
+	phone: string
+	parent_phone: string
+	certificate_id: string
+	pinfl: string
+	course: string
+}
+
+const emptyForm: FormState = {
+	first_name: '',
+	last_name: '',
+	father_name: '',
+	birth_date: '',
+	phone: '',
+	parent_phone: '',
+	certificate_id: '',
+	pinfl: '',
+	course: 'Web Development',
+}
+
+function StudentForm({
+	form,
+	onChange,
+}: {
+	form: FormState
+	onChange: (f: FormState) => void
+}) {
+	const set =
+		(key: keyof FormState) =>
+		(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+			onChange({ ...form, [key]: e.target.value })
+
+	return (
+		<div className='space-y-4'>
+			<div className='grid grid-cols-3 gap-3'>
+				<div>
+					<label className={labelCls}>Familiya *</label>
+					<input
+						className={inputCls}
+						placeholder='Karimov'
+						value={form.last_name}
+						onChange={set('last_name')}
+					/>
+				</div>
+				<div>
+					<label className={labelCls}>Ism *</label>
+					<input
+						className={inputCls}
+						placeholder='Jasur'
+						value={form.first_name}
+						onChange={set('first_name')}
+					/>
+				</div>
+				<div>
+					<label className={labelCls}>Otasining ismi</label>
+					<input
+						className={inputCls}
+						placeholder='Aliyevich'
+						value={form.father_name}
+						onChange={set('father_name')}
+					/>
+				</div>
+			</div>
+
+			<div className='grid grid-cols-2 gap-3'>
+				<div>
+					<label className={labelCls}>Tug'ilgan sana</label>
+					<input
+						className={inputCls}
+						type='date'
+						value={form.birth_date}
+						onChange={set('birth_date')}
+					/>
+				</div>
+				<div>
+					<label className={labelCls}>Kurs</label>
+					<select
+						className={inputCls}
+						value={form.course}
+						onChange={set('course')}
+					>
+						{courses.map(c => (
+							<option key={c}>{c}</option>
+						))}
+					</select>
+				</div>
+			</div>
+
+			<div className='grid grid-cols-2 gap-3'>
+				<div>
+					<label className={labelCls}>Telefon</label>
+					<input
+						className={inputCls}
+						placeholder='+998 90 000 00 00'
+						value={form.phone}
+						onChange={set('phone')}
+					/>
+				</div>
+				<div>
+					<label className={labelCls}>Ota-ona telefoni</label>
+					<input
+						className={inputCls}
+						placeholder='+998 90 000 00 00'
+						value={form.parent_phone}
+						onChange={set('parent_phone')}
+					/>
+				</div>
+			</div>
+
+			<div className='grid grid-cols-2 gap-3'>
+				<div>
+					<label className={labelCls}>Guvohnoma raqami</label>
+					<input
+						className={inputCls}
+						placeholder='AA1234567'
+						value={form.certificate_id}
+						onChange={set('certificate_id')}
+					/>
+				</div>
+				<div>
+					<label className={labelCls}>PINFL (JSHSHR)</label>
+					<input
+						className={inputCls}
+						placeholder='12345678901234'
+						maxLength={14}
+						value={form.pinfl}
+						onChange={set('pinfl')}
+					/>
+				</div>
+			</div>
+		</div>
+	)
+}
+
 // ─── Main Page ─────────────────────────────────────────────────────────────
 export default function StudentsPage() {
 	const [students, setStudents] = useState<Student[]>([])
@@ -181,7 +578,6 @@ export default function StudentsPage() {
 	const [saving, setSaving] = useState(false)
 	const [search, setSearch] = useState('')
 	const [filterStatus, setFilterStatus] = useState('all')
-	const [menu, setMenu] = useState<number | null>(null)
 	const [showAdd, setShowAdd] = useState(false)
 	const [editItem, setEditItem] = useState<Student | null>(null)
 	const [viewItem, setViewItem] = useState<Student | null>(null)
@@ -190,13 +586,7 @@ export default function StudentsPage() {
 		msg: string
 		type: 'success' | 'error'
 	} | null>(null)
-
-	const [form, setForm] = useState({
-		name: '',
-		email: '',
-		phone: '',
-		course: 'Web Development',
-	})
+	const [form, setForm] = useState<FormState>(emptyForm)
 
 	const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
 		setToast({ msg, type })
@@ -210,7 +600,7 @@ export default function StudentsPage() {
 			.select('*')
 			.order('created_at', { ascending: false })
 		if (error) {
-			showToast("Ma'lumotlarni yuklashda xato", 'error')
+			showToast('Yuklashda xato', 'error')
 			setLoading(false)
 			return
 		}
@@ -223,13 +613,18 @@ export default function StudentsPage() {
 	}, [])
 
 	const handleAdd = async () => {
-		if (!form.name) return
+		if (!form.first_name || !form.last_name) return
 		setSaving(true)
 		const { error } = await supabase.from('students').insert([
 			{
-				full_name: form.name,
-				email: form.email,
+				first_name: form.first_name,
+				last_name: form.last_name,
+				father_name: form.father_name,
+				birth_date: form.birth_date || null,
 				phone: form.phone,
+				parent_phone: form.parent_phone,
+				certificate_id: form.certificate_id,
+				pinfl: form.pinfl,
 				course_id: COURSE_ID_MAP[form.course] ?? 1,
 				payment_amount: 0,
 				status: 'active',
@@ -242,7 +637,7 @@ export default function StudentsPage() {
 		}
 		showToast("Talaba muvaffaqiyatli qo'shildi!")
 		setShowAdd(false)
-		setForm({ name: '', email: '', phone: '', course: 'Web Development' })
+		setForm(emptyForm)
 		fetchStudents()
 	}
 
@@ -252,9 +647,14 @@ export default function StudentsPage() {
 		const { error } = await supabase
 			.from('students')
 			.update({
-				full_name: editItem.name,
-				email: editItem.email,
+				first_name: editItem.first_name,
+				last_name: editItem.last_name,
+				father_name: editItem.father_name,
+				birth_date: editItem.birth_date || null,
 				phone: editItem.phone,
+				parent_phone: editItem.parent_phone,
+				certificate_id: editItem.certificate_id,
+				pinfl: editItem.pinfl,
 				course_id: COURSE_ID_MAP[editItem.course] ?? editItem.course_id,
 				status: editItem.status,
 			})
@@ -288,8 +688,9 @@ export default function StudentsPage() {
 
 	const filtered = students.filter(s => {
 		const ms =
-			s.name.toLowerCase().includes(search.toLowerCase()) ||
-			s.course.toLowerCase().includes(search.toLowerCase())
+			s.full_name.toLowerCase().includes(search.toLowerCase()) ||
+			s.course.toLowerCase().includes(search.toLowerCase()) ||
+			s.pinfl.includes(search)
 		const mf = filterStatus === 'all' || s.status === filterStatus
 		return ms && mf
 	})
@@ -305,116 +706,108 @@ export default function StudentsPage() {
 		<div className='space-y-5 pb-6'>
 			{toast && <Toast msg={toast.msg} type={toast.type} />}
 
+			{/* ── ADD MODAL ── */}
 			{showAdd && (
 				<Modal
 					title="Yangi Talaba Qo'shish"
 					onClose={() => {
 						setShowAdd(false)
-						setForm({
-							name: '',
-							email: '',
-							phone: '',
-							course: 'Web Development',
-						})
+						setForm(emptyForm)
 					}}
 				>
-					<div className='space-y-4'>
-						<div className='grid grid-cols-2 gap-3'>
-							<div>
-								<label className={labelCls}>To'liq ism *</label>
-								<input
-									className={inputCls}
-									placeholder='Ism Familiya'
-									value={form.name}
-									onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-								/>
-							</div>
-							<div>
-								<label className={labelCls}>Kurs</label>
-								<select
-									className={inputCls}
-									value={form.course}
-									onChange={e =>
-										setForm(p => ({ ...p, course: e.target.value }))
-									}
-								>
-									{courses.map(c => (
-										<option key={c}>{c}</option>
-									))}
-								</select>
-							</div>
-						</div>
-						<div className='grid grid-cols-2 gap-3'>
-							<div>
-								<label className={labelCls}>Email</label>
-								<input
-									className={inputCls}
-									type='email'
-									placeholder='email@gmail.com'
-									value={form.email}
-									onChange={e =>
-										setForm(p => ({ ...p, email: e.target.value }))
-									}
-								/>
-							</div>
-							<div>
-								<label className={labelCls}>Telefon</label>
-								<input
-									className={inputCls}
-									placeholder='+998 90 000 00 00'
-									value={form.phone}
-									onChange={e =>
-										setForm(p => ({ ...p, phone: e.target.value }))
-									}
-								/>
-							</div>
-						</div>
-						<div className='flex gap-3 pt-2'>
-							<button
-								onClick={() => {
-									setShowAdd(false)
-									setForm({
-										name: '',
-										email: '',
-										phone: '',
-										course: 'Web Development',
-									})
-								}}
-								className='flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-50 transition-colors'
-							>
-								Bekor
-							</button>
-							<button
-								onClick={handleAdd}
-								disabled={saving || !form.name}
-								className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
-							>
-								{saving ? (
-									<>
-										<Loader2 className='w-4 h-4 animate-spin' />
-										Saqlanmoqda...
-									</>
-								) : (
-									"Qo'shish"
-								)}
-							</button>
-						</div>
+					<StudentForm form={form} onChange={setForm} />
+					<div className='flex gap-3 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800'>
+						<button
+							onClick={() => {
+								setShowAdd(false)
+								setForm(emptyForm)
+							}}
+							className='flex-1 h-10 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-sm font-bold hover:bg-slate-50 transition-colors'
+						>
+							Bekor
+						</button>
+						<button
+							onClick={handleAdd}
+							disabled={saving || !form.first_name || !form.last_name}
+							className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
+						>
+							{saving ? (
+								<>
+									<Loader2 className='w-4 h-4 animate-spin' />
+									Saqlanmoqda...
+								</>
+							) : (
+								"Qo'shish"
+							)}
+						</button>
 					</div>
 				</Modal>
 			)}
 
+			{/* ── EDIT MODAL ── */}
 			{editItem && (
 				<Modal title='Talabani Tahrirlash' onClose={() => setEditItem(null)}>
 					<div className='space-y-4'>
-						<div className='grid grid-cols-2 gap-3'>
+						<div className='grid grid-cols-3 gap-3'>
 							<div>
-								<label className={labelCls}>To'liq ism</label>
+								<label className={labelCls}>Familiya</label>
 								<input
 									className={inputCls}
-									value={editItem.name}
+									value={editItem.last_name}
 									onChange={e =>
 										setEditItem(p =>
-											p ? { ...p, name: e.target.value } : null,
+											p
+												? {
+														...p,
+														last_name: e.target.value,
+														full_name: `${e.target.value} ${p.first_name}`,
+													}
+												: null,
+										)
+									}
+								/>
+							</div>
+							<div>
+								<label className={labelCls}>Ism</label>
+								<input
+									className={inputCls}
+									value={editItem.first_name}
+									onChange={e =>
+										setEditItem(p =>
+											p
+												? {
+														...p,
+														first_name: e.target.value,
+														full_name: `${p.last_name} ${e.target.value}`,
+													}
+												: null,
+										)
+									}
+								/>
+							</div>
+							<div>
+								<label className={labelCls}>Otasining ismi</label>
+								<input
+									className={inputCls}
+									value={editItem.father_name}
+									onChange={e =>
+										setEditItem(p =>
+											p ? { ...p, father_name: e.target.value } : null,
+										)
+									}
+								/>
+							</div>
+						</div>
+						<div className='grid grid-cols-2 gap-3'>
+							<div>
+								<label className={labelCls}>Tug'ilgan sana</label>
+								<input
+									className={inputCls}
+									type='date'
+									value={editItem.birth_date}
+									onChange={e =>
+										setEditItem(p =>
+											p ? { ...p, birth_date: e.target.value } : null,
 										)
 									}
 								/>
@@ -438,18 +831,6 @@ export default function StudentsPage() {
 						</div>
 						<div className='grid grid-cols-2 gap-3'>
 							<div>
-								<label className={labelCls}>Email</label>
-								<input
-									className={inputCls}
-									value={editItem.email}
-									onChange={e =>
-										setEditItem(p =>
-											p ? { ...p, email: e.target.value } : null,
-										)
-									}
-								/>
-							</div>
-							<div>
 								<label className={labelCls}>Telefon</label>
 								<input
 									className={inputCls}
@@ -457,6 +838,45 @@ export default function StudentsPage() {
 									onChange={e =>
 										setEditItem(p =>
 											p ? { ...p, phone: e.target.value } : null,
+										)
+									}
+								/>
+							</div>
+							<div>
+								<label className={labelCls}>Ota-ona telefoni</label>
+								<input
+									className={inputCls}
+									value={editItem.parent_phone}
+									onChange={e =>
+										setEditItem(p =>
+											p ? { ...p, parent_phone: e.target.value } : null,
+										)
+									}
+								/>
+							</div>
+						</div>
+						<div className='grid grid-cols-2 gap-3'>
+							<div>
+								<label className={labelCls}>Guvohnoma raqami</label>
+								<input
+									className={inputCls}
+									value={editItem.certificate_id}
+									onChange={e =>
+										setEditItem(p =>
+											p ? { ...p, certificate_id: e.target.value } : null,
+										)
+									}
+								/>
+							</div>
+							<div>
+								<label className={labelCls}>PINFL (JSHSHR)</label>
+								<input
+									className={inputCls}
+									maxLength={14}
+									value={editItem.pinfl}
+									onChange={e =>
+										setEditItem(p =>
+											p ? { ...p, pinfl: e.target.value } : null,
 										)
 									}
 								/>
@@ -488,7 +908,7 @@ export default function StudentsPage() {
 							<button
 								onClick={handleEdit}
 								disabled={saving}
-								className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
+								className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
 							>
 								{saving ? (
 									<>
@@ -504,40 +924,48 @@ export default function StudentsPage() {
 				</Modal>
 			)}
 
+			{/* ── VIEW MODAL ── */}
 			{viewItem && (
 				<Modal title="Talaba Ma'lumotlari" onClose={() => setViewItem(null)}>
-					<div className='flex items-center gap-4 mb-4'>
+					<div className='flex items-center gap-4 mb-5'>
 						<div
-							className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${viewItem.color} flex items-center justify-center`}
+							className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${viewItem.color} flex items-center justify-center shrink-0`}
 						>
 							<span className='text-white text-lg font-black'>
 								{viewItem.avatar}
 							</span>
 						</div>
 						<div>
-							<p className='font-black text-slate-900 dark:text-white'>
-								{viewItem.name}
+							<p className='font-black text-slate-900 dark:text-white text-base'>
+								{viewItem.full_name}
 							</p>
 							<p className='text-sm text-blue-600 dark:text-blue-400 font-semibold'>
 								{viewItem.course}
 							</p>
 						</div>
 					</div>
-					<div className='space-y-2'>
+					<div className='grid grid-cols-2 gap-x-6'>
 						{[
-							['Email', viewItem.email],
+							['Familiya', viewItem.last_name],
+							['Ism', viewItem.first_name],
+							['Otasining ismi', viewItem.father_name],
+							["Tug'ilgan sana", viewItem.birth_date],
 							['Telefon', viewItem.phone],
+							['Ota-ona telefoni', viewItem.parent_phone],
+							['Guvohnoma raqami', viewItem.certificate_id],
+							['PINFL (JSHSHR)', viewItem.pinfl],
 							['Kurs', viewItem.course],
-							['Sana', viewItem.date],
+							['Holat', viewItem.status],
 							["To'lov", viewItem.paid],
+							["Ro'yxatga olingan", viewItem.date],
 						].map(([k, v]) => (
 							<div
 								key={k}
 								className='flex justify-between py-2 border-b border-slate-100 dark:border-slate-800 last:border-0'
 							>
-								<span className='text-xs text-slate-500'>{k}</span>
-								<span className='text-xs font-bold text-slate-900 dark:text-white'>
-									{v}
+								<span className='text-xs text-slate-400'>{k}</span>
+								<span className='text-xs font-bold text-slate-900 dark:text-white text-right max-w-[140px] truncate'>
+									{v || '—'}
 								</span>
 							</div>
 						))}
@@ -545,11 +973,12 @@ export default function StudentsPage() {
 				</Modal>
 			)}
 
+			{/* ── DELETE MODAL ── */}
 			{deleteItem && (
 				<Modal title="Talabani O'chirish" onClose={() => setDeleteItem(null)}>
 					<p className='text-sm text-slate-600 dark:text-slate-300 mb-5'>
 						<span className='font-bold text-slate-900 dark:text-white'>
-							"{deleteItem.name}"
+							"{deleteItem.full_name}"
 						</span>{' '}
 						ni o'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo'lmaydi.
 					</p>
@@ -578,6 +1007,7 @@ export default function StudentsPage() {
 				</Modal>
 			)}
 
+			{/* ── HEADER ── */}
 			<div className='flex items-center justify-between'>
 				<div>
 					<h1 className='text-xl font-black text-slate-900 dark:text-white'>
@@ -587,14 +1017,18 @@ export default function StudentsPage() {
 						{students.length} ta talaba ro'yxatda
 					</p>
 				</div>
-				<button
-					onClick={() => setShowAdd(true)}
-					className='flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all hover:scale-[1.02] shadow-md shadow-blue-500/25'
-				>
-					<UserPlus className='w-3.5 h-3.5' /> Talaba Qo'shish
-				</button>
+				<div className='flex items-center gap-2'>
+					<ExportMenu students={filtered} />
+					<button
+						onClick={() => setShowAdd(true)}
+						className='flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all hover:scale-[1.02] shadow-md shadow-blue-500/25'
+					>
+						<UserPlus className='w-3.5 h-3.5' /> Talaba Qo'shish
+					</button>
+				</div>
 			</div>
 
+			{/* ── STATS ── */}
 			<div className='grid grid-cols-3 gap-3'>
 				{[
 					{
@@ -643,13 +1077,14 @@ export default function StudentsPage() {
 				})}
 			</div>
 
+			{/* ── SEARCH & FILTER ── */}
 			<div className='flex items-center gap-3 flex-wrap'>
 				<div className='relative flex-1 max-w-xs'>
 					<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400' />
 					<input
 						value={search}
 						onChange={e => setSearch(e.target.value)}
-						placeholder="Ism yoki kurs bo'yicha..."
+						placeholder='Ism, kurs yoki PINFL...'
 						className='w-full h-9 pl-9 pr-4 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors'
 					/>
 				</div>
@@ -672,6 +1107,7 @@ export default function StudentsPage() {
 				</div>
 			</div>
 
+			{/* ── TABLE ── */}
 			<div className='bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm'>
 				{loading ? (
 					<div className='flex items-center justify-center py-16 gap-3'>
@@ -688,7 +1124,8 @@ export default function StudentsPage() {
 										'Talaba',
 										'Kurs',
 										'Telefon',
-										'Email',
+										'PINFL',
+										'Guvohnoma',
 										'Sana',
 										'Holat',
 										"To'lov",
@@ -707,7 +1144,7 @@ export default function StudentsPage() {
 								{filtered.length === 0 ? (
 									<tr>
 										<td
-											colSpan={9}
+											colSpan={10}
 											className='text-center py-12 text-slate-400 text-sm'
 										>
 											Talabalar topilmadi
@@ -738,9 +1175,16 @@ export default function StudentsPage() {
 																{s.avatar}
 															</span>
 														</div>
-														<span className='text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap'>
-															{s.name}
-														</span>
+														<div>
+															<p className='text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap'>
+																{s.full_name}
+															</p>
+															{s.father_name && (
+																<p className='text-[10px] text-slate-400'>
+																	{s.father_name}
+																</p>
+															)}
+														</div>
 													</div>
 												</td>
 												<td className='px-4 py-3'>
@@ -749,13 +1193,25 @@ export default function StudentsPage() {
 													</span>
 												</td>
 												<td className='px-4 py-3'>
-													<span className='text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap'>
-														{s.phone}
+													<div>
+														<p className='text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap'>
+															{s.phone || '—'}
+														</p>
+														{s.parent_phone && (
+															<p className='text-[10px] text-slate-400'>
+																{s.parent_phone}
+															</p>
+														)}
+													</div>
+												</td>
+												<td className='px-4 py-3'>
+													<span className='text-[11px] text-slate-500 dark:text-slate-400 font-mono'>
+														{s.pinfl || '—'}
 													</span>
 												</td>
 												<td className='px-4 py-3'>
 													<span className='text-[11px] text-slate-500 dark:text-slate-400'>
-														{s.email}
+														{s.certificate_id || '—'}
 													</span>
 												</td>
 												<td className='px-4 py-3'>
@@ -777,47 +1233,12 @@ export default function StudentsPage() {
 													</span>
 												</td>
 												<td className='px-4 py-3'>
-													<div className='relative'>
-														<button
-															onClick={() =>
-																setMenu(menu === s.id ? null : s.id)
-															}
-															className='w-7 h-7 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors'
-														>
-															<MoreHorizontal className='w-4 h-4' />
-														</button>
-														{menu === s.id && (
-															<div className='absolute right-0 top-full mt-1 w-36 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-10 py-1'>
-																<button
-																	onClick={() => {
-																		setViewItem(s)
-																		setMenu(null)
-																	}}
-																	className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors'
-																>
-																	<Eye className='w-3.5 h-3.5' /> Ko'rish
-																</button>
-																<button
-																	onClick={() => {
-																		setEditItem(s)
-																		setMenu(null)
-																	}}
-																	className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors'
-																>
-																	<Edit2 className='w-3.5 h-3.5' /> Tahrirlash
-																</button>
-																<button
-																	onClick={() => {
-																		setDeleteItem(s)
-																		setMenu(null)
-																	}}
-																	className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors'
-																>
-																	<Trash2 className='w-3.5 h-3.5' /> O'chirish
-																</button>
-															</div>
-														)}
-													</div>
+													<ActionMenu
+														student={s}
+														onView={() => setViewItem(s)}
+														onEdit={() => setEditItem(s)}
+														onDelete={() => setDeleteItem(s)}
+													/>
 												</td>
 											</tr>
 										)

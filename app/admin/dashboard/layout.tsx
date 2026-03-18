@@ -56,6 +56,12 @@ const navItems = [
 		labelUz: "To'lovlar",
 		icon: CreditCard,
 	},
+	{
+		href: '/admin/dashboard/groups',
+		label: 'Groups',
+		labelUz: 'Guruhlar',
+		icon: Users,
+	},
 ]
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
