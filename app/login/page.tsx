@@ -39,7 +39,7 @@ export default function LoginPage() {
 			if (userRole === 'admin') {
 				router.replace('/admin/dashboard')
 			} else if (userRole === 'teacher') {
-				router.replace('/teacher-panel')
+				router.replace('/teacher-panel/dashboard')
 			} else {
 				// Noma'lum role bo'lsa — localStorage tozalab, login'da qoldiramiz
 				localStorage.removeItem('adminLoggedIn')
