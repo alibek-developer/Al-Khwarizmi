@@ -214,13 +214,18 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
 export default function AdminDashboardPage() {
 	const router = useRouter()
 	const [greeting, setGreeting] = useState('')
+	const [isMounted, setIsMounted] = useState(false)
 
 	useEffect(() => {
-		const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+		setIsMounted(true)
+
+		// DIQQAT: Kalit nomi 'adminLoggedIn' deb o'zgartirildi
+		const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'
 		const userRole = localStorage.getItem('userRole')
 
 		if (!isLoggedIn || userRole !== 'admin') {
 			router.replace('/login')
+			return // Muhim: Yo'naltirishdan keyin kod o'qilishini to'xtatadi
 		}
 
 		const h = new Date().getHours()
@@ -234,6 +239,11 @@ export default function AdminDashboardPage() {
 		day: 'numeric',
 		month: 'long',
 	})
+
+	// Hydration xatosining oldini olish
+	if (!isMounted) {
+		return null
+	}
 
 	return (
 		<div className='space-y-5 pb-6'>
@@ -276,7 +286,7 @@ export default function AdminDashboardPage() {
 								</div>
 								<span
 									className={`flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-lg
-									${
+                  ${
 										stat.up
 											? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10'
 											: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10'
@@ -345,7 +355,7 @@ export default function AdminDashboardPage() {
 									>
 										<div
 											className={`absolute bottom-0 w-full rounded-t-lg transition-all duration-500
-												${
+                        ${
 													isLast
 														? 'bg-blue-600'
 														: 'bg-slate-200 dark:bg-slate-700 group-hover/bar:bg-blue-300 dark:group-hover/bar:bg-blue-500/50'
@@ -501,7 +511,7 @@ export default function AdminDashboardPage() {
 					{
 						label: 'Bu oyda yangi talabalar',
 						value: '48',
-						sub: "+12 o'gan haftaga",
+						sub: "+12 o'tgan haftaga",
 						icon: Users,
 						color: 'text-blue-600 dark:text-blue-400',
 						bg: 'bg-blue-50 dark:bg-blue-500/10',
