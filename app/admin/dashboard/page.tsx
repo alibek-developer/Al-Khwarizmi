@@ -216,8 +216,12 @@ export default function AdminDashboardPage() {
 	const [greeting, setGreeting] = useState('')
 
 	useEffect(() => {
-		const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'
-		if (!isLoggedIn) router.replace('/login')
+		const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'
+		const userRole = localStorage.getItem('userRole')
+
+		if (!isLoggedIn || userRole !== 'admin') {
+			router.replace('/login')
+		}
 
 		const h = new Date().getHours()
 		if (h < 12) setGreeting('Xayrli tong')
