@@ -44,18 +44,22 @@ const CATEGORIES = [
 ]
 
 const categoryColors: Record<string, string> = {
-	Darslik: 'bg-blue-500/15 text-blue-400',
-	Video: 'bg-red-500/15 text-red-400',
-	Amaliyot: 'bg-emerald-500/15 text-emerald-400',
-	"Qo'shimcha": 'bg-amber-500/15 text-amber-400',
-	Test: 'bg-violet-500/15 text-violet-400',
-	Boshqa: 'bg-slate-500/15 text-slate-400',
+	Darslik:
+		'bg-blue-50   dark:bg-blue-500/15   text-blue-700   dark:text-blue-400',
+	Video: 'bg-red-50    dark:bg-red-500/15    text-red-700    dark:text-red-400',
+	Amaliyot:
+		'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400',
+	"Qo'shimcha":
+		'bg-amber-50  dark:bg-amber-500/15  text-amber-700  dark:text-amber-400',
+	Test: 'bg-violet-50 dark:bg-violet-500/15 text-violet-700 dark:text-violet-400',
+	Boshqa:
+		'bg-slate-100 dark:bg-slate-500/15  text-slate-600  dark:text-slate-400',
 }
 
 const inputCls =
-	'w-full h-10 px-3 text-sm bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors'
+	'w-full h-10 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors'
 const labelCls =
-	'block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5'
+	'block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5'
 
 export default function MaterialsPage() {
 	const [groups, setGroups] = useState<Group[]>([])
@@ -69,7 +73,6 @@ export default function MaterialsPage() {
 		msg: string
 		type: 'success' | 'error'
 	} | null>(null)
-
 	const [form, setForm] = useState({
 		group_id: '',
 		title: '',
@@ -94,13 +97,11 @@ export default function MaterialsPage() {
 			.select('id, name')
 			.eq('mentor_id', MENTOR_ID)
 		setGroups(gData || [])
-
-		if (!gData || gData.length === 0) {
+		if (!gData?.length) {
 			setLoading(false)
 			return
 		}
 		const gMap = Object.fromEntries(gData.map(g => [g.id, g.name]))
-
 		const { data: mData } = await supabase
 			.from('materials')
 			.select('*')
@@ -109,7 +110,6 @@ export default function MaterialsPage() {
 				gData.map(g => g.id),
 			)
 			.order('created_at', { ascending: false })
-
 		setMaterials(
 			(mData || []).map(m => ({ ...m, group_name: gMap[m.group_id] || '—' })),
 		)
@@ -119,15 +119,17 @@ export default function MaterialsPage() {
 	const handleAdd = async () => {
 		if (!form.title || !form.group_id) return
 		setSaving(true)
-		const { error } = await supabase.from('materials').insert([
-			{
-				group_id: form.group_id,
-				title: form.title,
-				file_url: form.file_url || null,
-				link_url: form.link_url || null,
-				category: form.category,
-			},
-		])
+		const { error } = await supabase
+			.from('materials')
+			.insert([
+				{
+					group_id: form.group_id,
+					title: form.title,
+					file_url: form.file_url || null,
+					link_url: form.link_url || null,
+					category: form.category,
+				},
+			])
 		setSaving(false)
 		if (error) {
 			showToast('Xato: ' + error.message, 'error')
@@ -159,8 +161,13 @@ export default function MaterialsPage() {
 		.filter(m => filterGroup === 'all' || m.group_id === filterGroup)
 		.filter(m => filterCat === 'all' || m.category === filterCat)
 
+	const filterBtnBase =
+		'px-3 py-1.5 rounded-xl text-xs font-bold transition-all'
+	const filterBtnOff =
+		'bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'
+
 	return (
-		<div className='min-h-screen bg-slate-950 text-white p-6 space-y-6'>
+		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 space-y-6 transition-colors duration-300'>
 			{toast && (
 				<div
 					className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
@@ -177,18 +184,20 @@ export default function MaterialsPage() {
 			{/* Add Modal */}
 			{showAdd && (
 				<div
-					className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
+					className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'
 					onClick={() => setShowAdd(false)}
 				>
 					<div
-						className='w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl'
+						className='w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl'
 						onClick={e => e.stopPropagation()}
 					>
-						<div className='flex items-center justify-between px-6 py-4 border-b border-white/5'>
-							<h3 className='font-black text-white'>Material Qo'shish</h3>
+						<div className='flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5'>
+							<h3 className='font-black text-slate-900 dark:text-white'>
+								Material Qo'shish
+							</h3>
 							<button
 								onClick={() => setShowAdd(false)}
-								className='w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white/5 transition-colors'
+								className='w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors'
 							>
 								<X className='w-4 h-4' />
 							</button>
@@ -263,14 +272,14 @@ export default function MaterialsPage() {
 							<div className='flex gap-3 pt-2'>
 								<button
 									onClick={() => setShowAdd(false)}
-									className='flex-1 h-10 rounded-xl border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/5 transition-colors'
+									className='flex-1 h-10 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-colors'
 								>
 									Bekor
 								</button>
 								<button
 									onClick={handleAdd}
 									disabled={saving || !form.title || !form.group_id}
-									className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
+									className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 text-sm font-black transition-colors flex items-center justify-center gap-2'
 								>
 									{saving ? (
 										<>
@@ -292,8 +301,10 @@ export default function MaterialsPage() {
 
 			<div className='flex items-center justify-between'>
 				<div>
-					<h1 className='text-2xl font-black text-white'>Materiallar</h1>
-					<p className='text-slate-400 text-sm mt-0.5'>
+					<h1 className='text-2xl font-black text-slate-900 dark:text-white'>
+						Materiallar
+					</h1>
+					<p className='text-slate-500 dark:text-slate-400 text-sm mt-0.5'>
 						Dars materiallari va resurslar
 					</p>
 				</div>
@@ -305,11 +316,11 @@ export default function MaterialsPage() {
 				</button>
 			</div>
 
-			{/* Filters */}
+			{/* Guruh filter */}
 			<div className='flex gap-2 flex-wrap'>
 				<button
 					onClick={() => setFilterGroup('all')}
-					className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterGroup === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-900 border border-white/10 text-slate-400 hover:border-white/20'}`}
+					className={`${filterBtnBase} ${filterGroup === 'all' ? 'bg-blue-600 text-white shadow-sm' : filterBtnOff}`}
 				>
 					Barcha guruhlar
 				</button>
@@ -317,16 +328,18 @@ export default function MaterialsPage() {
 					<button
 						key={g.id}
 						onClick={() => setFilterGroup(g.id)}
-						className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterGroup === g.id ? 'bg-blue-600 text-white' : 'bg-slate-900 border border-white/10 text-slate-400 hover:border-white/20'}`}
+						className={`${filterBtnBase} ${filterGroup === g.id ? 'bg-blue-600 text-white shadow-sm' : filterBtnOff}`}
 					>
 						{g.name}
 					</button>
 				))}
 			</div>
+
+			{/* Kategoriya filter */}
 			<div className='flex gap-2 flex-wrap'>
 				<button
 					onClick={() => setFilterCat('all')}
-					className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterCat === 'all' ? 'bg-slate-600 text-white' : 'bg-slate-900 border border-white/10 text-slate-400 hover:border-white/20'}`}
+					className={`${filterBtnBase} ${filterCat === 'all' ? 'bg-slate-700 text-white shadow-sm' : filterBtnOff}`}
 				>
 					Barchasi
 				</button>
@@ -334,7 +347,7 @@ export default function MaterialsPage() {
 					<button
 						key={c}
 						onClick={() => setFilterCat(c)}
-						className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${filterCat === c ? categoryColors[c] + ' border border-current' : 'bg-slate-900 border border-white/10 text-slate-400 hover:border-white/20'}`}
+						className={`${filterBtnBase} ${filterCat === c ? categoryColors[c] + ' border border-current' : filterBtnOff}`}
 					>
 						{c}
 					</button>
@@ -344,55 +357,59 @@ export default function MaterialsPage() {
 			{loading ? (
 				<div className='flex items-center justify-center py-20 gap-3'>
 					<Loader2 className='w-5 h-5 animate-spin text-blue-500' />
-					<span className='text-slate-400'>Yuklanmoqda...</span>
+					<span className='text-slate-400 dark:text-slate-500'>
+						Yuklanmoqda...
+					</span>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className='text-center py-20 bg-slate-900/50 border border-white/5 rounded-2xl'>
-					<BookOpen className='w-12 h-12 text-slate-700 mx-auto mb-3' />
-					<p className='text-slate-500'>Material topilmadi</p>
+				<div className='text-center py-20 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl'>
+					<BookOpen className='w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3' />
+					<p className='text-slate-400 dark:text-slate-500'>
+						Material topilmadi
+					</p>
 				</div>
 			) : (
 				<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
 					{filtered.map(m => (
 						<div
 							key={m.id}
-							className='bg-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:border-blue-500/20 transition-all group'
+							className='bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/5 rounded-2xl p-5 hover:border-blue-200 dark:hover:border-blue-500/20 hover:shadow-md transition-all group'
 						>
 							<div className='flex items-start justify-between mb-3'>
-								<div className='w-9 h-9 bg-blue-500/10 rounded-xl flex items-center justify-center'>
+								<div className='w-9 h-9 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center'>
 									{m.file_url ? (
-										<FileText className='w-4 h-4 text-blue-400' />
+										<FileText className='w-4 h-4 text-blue-600 dark:text-blue-400' />
 									) : (
-										<Link className='w-4 h-4 text-blue-400' />
+										<Link className='w-4 h-4 text-blue-600 dark:text-blue-400' />
 									)}
 								</div>
 								<div className='flex items-center gap-1'>
 									<span
-										className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${categoryColors[m.category] || 'bg-slate-500/15 text-slate-400'}`}
+										className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${categoryColors[m.category] || 'bg-slate-100 dark:bg-slate-500/15 text-slate-500'}`}
 									>
 										{m.category}
 									</span>
 									<button
 										onClick={() => handleDelete(m.id)}
-										className='w-7 h-7 rounded-lg flex items-center justify-center text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100'
+										className='w-7 h-7 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100'
 									>
 										<Trash2 className='w-3.5 h-3.5' />
 									</button>
 								</div>
 							</div>
-							<h3 className='font-black text-white mb-1 line-clamp-2 text-sm'>
+							<h3 className='font-black text-slate-900 dark:text-white mb-1 line-clamp-2 text-sm'>
 								{m.title}
 							</h3>
-							<p className='text-xs text-blue-400 font-semibold mb-3'>
+							<p className='text-xs text-blue-600 dark:text-blue-400 font-semibold mb-3'>
 								{m.group_name}
 							</p>
-							<div className='flex gap-2 pt-3 border-t border-white/5'>
+							<div className='flex gap-3 pt-3 border-t border-slate-100 dark:border-white/5'>
 								{m.file_url && (
 									<a
 										href={m.file_url}
 										target='_blank'
 										rel='noreferrer'
-										className='flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-colors'
+										className='flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
 									>
 										<Download className='w-3 h-3' />
 										Yuklab olish
@@ -403,16 +420,18 @@ export default function MaterialsPage() {
 										href={m.link_url}
 										target='_blank'
 										rel='noreferrer'
-										className='flex items-center gap-1 text-xs text-slate-400 hover:text-blue-400 transition-colors'
+										className='flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors'
 									>
 										<ExternalLink className='w-3 h-3' />
 										Havola
 									</a>
 								)}
 								{!m.file_url && !m.link_url && (
-									<span className='text-xs text-slate-600'>Havola yo'q</span>
+									<span className='text-xs text-slate-300 dark:text-slate-600'>
+										Havola yo'q
+									</span>
 								)}
-								<span className='ml-auto text-[10px] text-slate-600'>
+								<span className='ml-auto text-[10px] text-slate-400 dark:text-slate-600'>
 									{new Date(m.created_at).toLocaleDateString('uz-UZ')}
 								</span>
 							</div>

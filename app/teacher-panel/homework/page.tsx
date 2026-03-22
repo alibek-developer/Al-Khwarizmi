@@ -46,9 +46,9 @@ type Submission = {
 }
 
 const inputCls =
-	'w-full h-10 px-3 text-sm bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors'
+	'w-full h-10 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors'
 const labelCls =
-	'block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5'
+	'block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5'
 
 export default function HomeworkPage() {
 	const [groups, setGroups] = useState<Group[]>([])
@@ -64,7 +64,6 @@ export default function HomeworkPage() {
 	} | null>(null)
 	const [grades, setGrades] = useState<Record<string, string>>({})
 	const [filterGroup, setFilterGroup] = useState('all')
-
 	const [form, setForm] = useState({
 		group_id: '',
 		title: '',
@@ -84,24 +83,24 @@ export default function HomeworkPage() {
 
 	const fetchAll = async () => {
 		setLoading(true)
-		const { data: groupsData } = await supabase
+		const { data: gData } = await supabase
 			.from('groups')
 			.select('id, name')
 			.eq('mentor_id', MENTOR_ID)
-		setGroups(groupsData || [])
-
-		if (!groupsData || groupsData.length === 0) {
+		setGroups(gData || [])
+		if (!gData?.length) {
 			setLoading(false)
 			return
 		}
 
-		const groupIds = groupsData.map(g => g.id)
 		const { data: hwData } = await supabase
 			.from('homeworks')
 			.select('*')
-			.in('group_id', groupIds)
+			.in(
+				'group_id',
+				gData.map(g => g.id),
+			)
 			.order('created_at', { ascending: false })
-
 		const { data: subData } = await supabase
 			.from('homework_submissions')
 			.select('homework_id')
@@ -109,13 +108,11 @@ export default function HomeworkPage() {
 				'homework_id',
 				(hwData || []).map(h => h.id),
 			)
-
 		const countMap: Record<string, number> = {}
 		;(subData || []).forEach(s => {
 			countMap[s.homework_id] = (countMap[s.homework_id] || 0) + 1
 		})
-
-		const gMap = Object.fromEntries(groupsData.map(g => [g.id, g.name]))
+		const gMap = Object.fromEntries(gData.map(g => [g.id, g.name]))
 		setHomeworks(
 			(hwData || []).map(h => ({
 				...h,
@@ -133,44 +130,43 @@ export default function HomeworkPage() {
 			.select('*')
 			.eq('homework_id', hw.id)
 			.order('submitted_at', { ascending: false })
-
-		// Student nomlarini olamiz
-		const studentIds = (data || []).map(s => s.student_id)
+		const ids = (data || []).map(s => s.student_id)
 		let sMap: Record<string, string> = {}
-		if (studentIds.length > 0) {
+		if (ids.length) {
 			const { data: stData } = await supabase
 				.from('students')
 				.select('id, first_name, last_name')
-				.in('id', studentIds)
+				.in('id', ids)
 			;(stData || []).forEach(s => {
 				sMap[s.id] = `${s.last_name} ${s.first_name}`.trim()
 			})
 		}
-
 		const merged = (data || []).map(s => ({
 			...s,
 			student_name: sMap[s.student_id] || '—',
 		}))
 		setSubmissions(merged)
-		const initGrades: Record<string, string> = {}
+		const initG: Record<string, string> = {}
 		merged.forEach(s => {
-			initGrades[s.id] = s.grade?.toString() || ''
+			initG[s.id] = s.grade?.toString() || ''
 		})
-		setGrades(initGrades)
+		setGrades(initG)
 	}
 
 	const handleAdd = async () => {
 		if (!form.title || !form.group_id) return
 		setSaving(true)
-		const { error } = await supabase.from('homeworks').insert([
-			{
-				group_id: form.group_id,
-				title: form.title,
-				description: form.description,
-				due_date: form.due_date || null,
-				file_url: form.file_url || null,
-			},
-		])
+		const { error } = await supabase
+			.from('homeworks')
+			.insert([
+				{
+					group_id: form.group_id,
+					title: form.title,
+					description: form.description,
+					due_date: form.due_date || null,
+					file_url: form.file_url || null,
+				},
+			])
 		setSaving(false)
 		if (error) {
 			showToast('Xato: ' + error.message, 'error')
@@ -188,8 +184,8 @@ export default function HomeworkPage() {
 		fetchAll()
 	}
 
-	const handleGrade = async (submissionId: string) => {
-		const grade = parseInt(grades[submissionId] || '0')
+	const handleGrade = async (subId: string) => {
+		const grade = parseInt(grades[subId] || '0')
 		if (isNaN(grade) || grade < 0 || grade > 100) {
 			showToast("Baho 0-100 oralig'ida bo'lishi kerak", 'error')
 			return
@@ -197,16 +193,14 @@ export default function HomeworkPage() {
 		const { error } = await supabase
 			.from('homework_submissions')
 			.update({ grade, status: 'checked' })
-			.eq('id', submissionId)
+			.eq('id', subId)
 		if (error) {
 			showToast('Xato: ' + error.message, 'error')
 			return
 		}
 		showToast('Baho saqlandi!', 'success')
 		setSubmissions(p =>
-			p.map(s =>
-				s.id === submissionId ? { ...s, grade, status: 'checked' } : s,
-			),
+			p.map(s => (s.id === subId ? { ...s, grade, status: 'checked' } : s)),
 		)
 	}
 
@@ -214,11 +208,15 @@ export default function HomeworkPage() {
 		filterGroup === 'all'
 			? homeworks
 			: homeworks.filter(h => h.group_id === filterGroup)
+	const isOverdue = (d: string) => d && new Date(d) < new Date()
 
-	const isOverdue = (date: string) => date && new Date(date) < new Date()
+	const modalBase =
+		'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'
+	const modalCard =
+		'w-full max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl'
 
 	return (
-		<div className='min-h-screen bg-slate-950 text-white p-6 space-y-6'>
+		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 space-y-6 transition-colors duration-300'>
 			{toast && (
 				<div
 					className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
@@ -234,19 +232,15 @@ export default function HomeworkPage() {
 
 			{/* Add Modal */}
 			{showAdd && (
-				<div
-					className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
-					onClick={() => setShowAdd(false)}
-				>
-					<div
-						className='w-full max-w-lg bg-slate-900 border border-white/10 rounded-2xl shadow-2xl'
-						onClick={e => e.stopPropagation()}
-					>
-						<div className='flex items-center justify-between px-6 py-4 border-b border-white/5'>
-							<h3 className='font-black text-white'>Yangi Vazifa</h3>
+				<div className={modalBase} onClick={() => setShowAdd(false)}>
+					<div className={modalCard} onClick={e => e.stopPropagation()}>
+						<div className='flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5'>
+							<h3 className='font-black text-slate-900 dark:text-white'>
+								Yangi Vazifa
+							</h3>
 							<button
 								onClick={() => setShowAdd(false)}
-								className='w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white/5 transition-colors'
+								className='w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors'
 							>
 								<X className='w-4 h-4' />
 							</button>
@@ -284,7 +278,7 @@ export default function HomeworkPage() {
 								<label className={labelCls}>Tavsif</label>
 								<textarea
 									rows={3}
-									className='w-full px-3 py-2.5 text-sm bg-slate-800 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors resize-none'
+									className='w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none'
 									placeholder='Vazifa tavsifi...'
 									value={form.description}
 									onChange={e =>
@@ -305,7 +299,7 @@ export default function HomeworkPage() {
 									/>
 								</div>
 								<div>
-									<label className={labelCls}>Fayl URL (ixtiyoriy)</label>
+									<label className={labelCls}>Fayl URL</label>
 									<input
 										className={inputCls}
 										placeholder='https://...'
@@ -319,14 +313,14 @@ export default function HomeworkPage() {
 							<div className='flex gap-3 pt-2'>
 								<button
 									onClick={() => setShowAdd(false)}
-									className='flex-1 h-10 rounded-xl border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/5 transition-colors'
+									className='flex-1 h-10 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-colors'
 								>
 									Bekor
 								</button>
 								<button
 									onClick={handleAdd}
 									disabled={saving || !form.title || !form.group_id}
-									className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
+									className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 text-sm font-black transition-colors flex items-center justify-center gap-2'
 								>
 									{saving ? (
 										<>
@@ -348,24 +342,23 @@ export default function HomeworkPage() {
 
 			{/* Submissions Modal */}
 			{selectedHw && (
-				<div
-					className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm'
-					onClick={() => setSelectedHw(null)}
-				>
+				<div className={modalBase} onClick={() => setSelectedHw(null)}>
 					<div
-						className='w-full max-w-3xl bg-slate-900 border border-white/10 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col'
+						className='w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col'
 						onClick={e => e.stopPropagation()}
 					>
-						<div className='flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0'>
+						<div className='flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-white/5 shrink-0'>
 							<div>
-								<h3 className='font-black text-white'>{selectedHw.title}</h3>
-								<p className='text-xs text-slate-400'>
+								<h3 className='font-black text-slate-900 dark:text-white'>
+									{selectedHw.title}
+								</h3>
+								<p className='text-xs text-slate-400 dark:text-slate-500'>
 									{submissions.length} ta topshiriq
 								</p>
 							</div>
 							<button
 								onClick={() => setSelectedHw(null)}
-								className='w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white/5 transition-colors'
+								className='w-8 h-8 rounded-xl flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors'
 							>
 								<X className='w-4 h-4' />
 							</button>
@@ -373,15 +366,17 @@ export default function HomeworkPage() {
 						<div className='p-4 overflow-y-auto'>
 							{submissions.length === 0 ? (
 								<div className='text-center py-10'>
-									<FileText className='w-10 h-10 text-slate-700 mx-auto mb-2' />
-									<p className='text-slate-500 text-sm'>Hali topshirilmagan</p>
+									<FileText className='w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto mb-2' />
+									<p className='text-slate-400 dark:text-slate-500 text-sm'>
+										Hali topshirilmagan
+									</p>
 								</div>
 							) : (
 								<div className='space-y-2'>
 									{submissions.map(sub => (
 										<div
 											key={sub.id}
-											className='flex items-center gap-4 bg-slate-800/50 border border-white/5 rounded-xl px-4 py-3'
+											className='flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5 rounded-xl px-4 py-3'
 										>
 											<div className='w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0'>
 												<span className='text-white text-[10px] font-black'>
@@ -393,17 +388,17 @@ export default function HomeworkPage() {
 												</span>
 											</div>
 											<div className='flex-1 min-w-0'>
-												<p className='text-sm font-bold text-white truncate'>
+												<p className='text-sm font-bold text-slate-900 dark:text-white truncate'>
 													{sub.student_name}
 												</p>
 												{sub.comment && (
-													<p className='text-[11px] text-slate-400 truncate'>
+													<p className='text-[11px] text-slate-500 dark:text-slate-400 truncate'>
 														{sub.comment}
 													</p>
 												)}
 												<div className='flex items-center gap-2 mt-1'>
 													<span
-														className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${sub.status === 'checked' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-amber-500/15 text-amber-400'}`}
+														className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${sub.status === 'checked' ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400'}`}
 													>
 														{sub.status === 'checked'
 															? 'Baholangan'
@@ -414,7 +409,7 @@ export default function HomeworkPage() {
 															href={sub.file_url}
 															target='_blank'
 															rel='noreferrer'
-															className='text-[10px] text-blue-400 hover:underline flex items-center gap-1'
+															className='text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1'
 														>
 															<Eye className='w-3 h-3' />
 															Fayl
@@ -422,24 +417,18 @@ export default function HomeworkPage() {
 													)}
 												</div>
 											</div>
-											{/* Baholash */}
 											<div className='flex items-center gap-2 shrink-0'>
-												<div className='relative'>
-													<input
-														type='number'
-														min={0}
-														max={100}
-														value={grades[sub.id] || ''}
-														onChange={e =>
-															setGrades(p => ({
-																...p,
-																[sub.id]: e.target.value,
-															}))
-														}
-														placeholder='0-100'
-														className='w-20 h-9 px-2 text-center text-sm bg-slate-700 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500'
-													/>
-												</div>
+												<input
+													type='number'
+													min={0}
+													max={100}
+													value={grades[sub.id] || ''}
+													onChange={e =>
+														setGrades(p => ({ ...p, [sub.id]: e.target.value }))
+													}
+													placeholder='0-100'
+													className='w-20 h-9 px-2 text-center text-sm bg-white dark:bg-slate-700 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500'
+												/>
 												<button
 													onClick={() => handleGrade(sub.id)}
 													className='h-9 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center gap-1'
@@ -451,11 +440,11 @@ export default function HomeworkPage() {
 											{sub.grade !== null && (
 												<div className='text-right shrink-0'>
 													<div
-														className={`text-lg font-black ${sub.grade >= 80 ? 'text-emerald-400' : sub.grade >= 60 ? 'text-amber-400' : 'text-red-400'}`}
+														className={`text-lg font-black ${sub.grade >= 80 ? 'text-emerald-600 dark:text-emerald-400' : sub.grade >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}
 													>
 														{sub.grade}
 													</div>
-													<div className='text-[10px] text-slate-500'>ball</div>
+													<div className='text-[10px] text-slate-400'>ball</div>
 												</div>
 											)}
 										</div>
@@ -469,8 +458,10 @@ export default function HomeworkPage() {
 
 			<div className='flex items-center justify-between'>
 				<div>
-					<h1 className='text-2xl font-black text-white'>Vazifalar</h1>
-					<p className='text-slate-400 text-sm mt-0.5'>
+					<h1 className='text-2xl font-black text-slate-900 dark:text-white'>
+						Vazifalar
+					</h1>
+					<p className='text-slate-500 dark:text-slate-400 text-sm mt-0.5'>
 						Uy vazifalarini boshqaring
 					</p>
 				</div>
@@ -484,19 +475,19 @@ export default function HomeworkPage() {
 
 			{/* Filter */}
 			<div className='flex gap-2 flex-wrap'>
-				<button
-					onClick={() => setFilterGroup('all')}
-					className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterGroup === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-900 border border-white/10 text-slate-400 hover:border-white/20'}`}
-				>
-					Barchasi ({homeworks.length})
-				</button>
-				{groups.map(g => (
+				{[
+					{ id: 'all', name: `Barchasi (${homeworks.length})` },
+					...groups.map(g => ({
+						id: g.id,
+						name: `${g.name} (${homeworks.filter(h => h.group_id === g.id).length})`,
+					})),
+				].map(g => (
 					<button
 						key={g.id}
 						onClick={() => setFilterGroup(g.id)}
-						className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterGroup === g.id ? 'bg-blue-600 text-white' : 'bg-slate-900 border border-white/10 text-slate-400 hover:border-white/20'}`}
+						className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${filterGroup === g.id ? 'bg-blue-600 text-white shadow-sm' : 'bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'}`}
 					>
-						{g.name} ({homeworks.filter(h => h.group_id === g.id).length})
+						{g.name}
 					</button>
 				))}
 			</div>
@@ -504,12 +495,16 @@ export default function HomeworkPage() {
 			{loading ? (
 				<div className='flex items-center justify-center py-20 gap-3'>
 					<Loader2 className='w-5 h-5 animate-spin text-blue-500' />
-					<span className='text-slate-400'>Yuklanmoqda...</span>
+					<span className='text-slate-400 dark:text-slate-500'>
+						Yuklanmoqda...
+					</span>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className='text-center py-20 bg-slate-900/50 border border-white/5 rounded-2xl'>
-					<BookOpen className='w-12 h-12 text-slate-700 mx-auto mb-3' />
-					<p className='text-slate-500'>Vazifalar topilmadi</p>
+				<div className='text-center py-20 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl'>
+					<BookOpen className='w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3' />
+					<p className='text-slate-400 dark:text-slate-500'>
+						Vazifalar topilmadi
+					</p>
 				</div>
 			) : (
 				<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -518,40 +513,40 @@ export default function HomeworkPage() {
 						return (
 							<div
 								key={hw.id}
-								className='bg-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl p-5 hover:border-blue-500/20 transition-all group'
+								className='bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/5 rounded-2xl p-5 hover:border-blue-200 dark:hover:border-blue-500/20 hover:shadow-md transition-all group'
 							>
 								<div className='flex items-start justify-between mb-3'>
-									<div className='w-9 h-9 bg-blue-500/15 rounded-xl flex items-center justify-center'>
-										<BookOpen className='w-4 h-4 text-blue-400' />
+									<div className='w-9 h-9 bg-blue-50 dark:bg-blue-500/10 rounded-xl flex items-center justify-center'>
+										<BookOpen className='w-4 h-4 text-blue-600 dark:text-blue-400' />
 									</div>
 									{hw.due_date && (
 										<span
-											className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${overdue ? 'bg-red-500/15 text-red-400' : 'bg-emerald-500/15 text-emerald-400'}`}
+											className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${overdue ? 'bg-red-50 dark:bg-red-500/15 text-red-600 dark:text-red-400' : 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'}`}
 										>
 											<Clock className='w-2.5 h-2.5' />
 											{new Date(hw.due_date).toLocaleDateString('uz-UZ')}
 										</span>
 									)}
 								</div>
-								<h3 className='font-black text-white mb-1 line-clamp-1'>
+								<h3 className='font-black text-slate-900 dark:text-white mb-1 line-clamp-1'>
 									{hw.title}
 								</h3>
-								<p className='text-xs text-blue-400 font-semibold mb-2'>
+								<p className='text-xs text-blue-600 dark:text-blue-400 font-semibold mb-2'>
 									{hw.group_name}
 								</p>
 								{hw.description && (
-									<p className='text-xs text-slate-400 line-clamp-2 mb-3'>
+									<p className='text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mb-3'>
 										{hw.description}
 									</p>
 								)}
-								<div className='flex items-center justify-between pt-3 border-t border-white/5'>
-									<span className='text-xs text-slate-500 flex items-center gap-1'>
+								<div className='flex items-center justify-between pt-3 border-t border-slate-100 dark:border-white/5'>
+									<span className='text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1'>
 										<FileText className='w-3 h-3' />
 										{hw.submission_count} topshiriq
 									</span>
 									<button
 										onClick={() => fetchSubmissions(hw)}
-										className='text-xs text-blue-400 font-bold hover:text-blue-300 transition-colors flex items-center gap-1'
+										className='text-xs text-blue-600 dark:text-blue-400 font-bold hover:text-blue-500 transition-colors flex items-center gap-1'
 									>
 										<Eye className='w-3 h-3' />
 										Ko'rish

@@ -30,9 +30,9 @@ type Certificate = {
 }
 
 const labelCls =
-	'block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1.5'
+	'block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5'
 const selectCls =
-	'w-full h-10 px-3 text-sm bg-slate-800 border border-white/10 rounded-xl text-white focus:outline-none focus:border-blue-500 transition-colors'
+	'w-full h-10 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors'
 
 export default function CertificatesPage() {
 	const [groups, setGroups] = useState<Group[]>([])
@@ -71,8 +71,6 @@ export default function CertificatesPage() {
 			.select('id, name')
 			.eq('mentor_id', MENTOR_ID)
 		setGroups(data || [])
-
-		// Berilgan sertifikatlar
 		const { data: certs } = await supabase
 			.from('certificates')
 			.select('*')
@@ -82,15 +80,15 @@ export default function CertificatesPage() {
 		setLoading(false)
 	}
 
-	const fetchStudents = async (groupId: string) => {
+	const fetchStudents = async (gId: string) => {
 		setStudentsLoading(true)
 		setSelectedStudent('')
-		const { data: enData } = await supabase
+		const { data: en } = await supabase
 			.from('group_enrollments')
 			.select('student_id')
-			.eq('group_id', groupId)
-		const ids = (enData || []).map(e => e.student_id)
-		if (ids.length === 0) {
+			.eq('group_id', gId)
+		const ids = (en || []).map(e => e.student_id)
+		if (!ids.length) {
 			setStudents([])
 			setStudentsLoading(false)
 			return
@@ -134,10 +132,7 @@ export default function CertificatesPage() {
 		fetchGroups()
 	}
 
-	const handlePrint = () => window.print()
-
 	const handleDownload = async () => {
-		// html-to-image kutubxonasi bo'lsa ishlatish uchun tuzilma
 		try {
 			// @ts-ignore
 			const { toPng } = await import('html-to-image')
@@ -152,20 +147,13 @@ export default function CertificatesPage() {
 				a.click()
 			}
 		} catch {
-			// html-to-image yo'q bo'lsa print ishlatamiz
 			window.print()
 		}
 	}
 
 	return (
-		<div className='min-h-screen bg-slate-950 text-white p-6 space-y-6'>
-			{/* Print styles */}
-			<style>{`
-        @media print {
-          body > * { display: none !important; }
-          #cert-print-area { display: block !important; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; }
-        }
-      `}</style>
+		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 space-y-6 transition-colors duration-300'>
+			<style>{`@media print { body > * { display:none!important } #cert-print-area { display:block!important; position:fixed; top:0; left:0; width:100%; height:100%; z-index:9999 } }`}</style>
 
 			{toast && (
 				<div
@@ -181,20 +169,21 @@ export default function CertificatesPage() {
 			)}
 
 			<div>
-				<h1 className='text-2xl font-black text-white'>Sertifikatlar</h1>
-				<p className='text-slate-400 text-sm mt-0.5'>
+				<h1 className='text-2xl font-black text-slate-900 dark:text-white'>
+					Sertifikatlar
+				</h1>
+				<p className='text-slate-500 dark:text-slate-400 text-sm mt-0.5'>
 					Bitiruvchilarga sertifikat yarating
 				</p>
 			</div>
 
 			<div className='grid lg:grid-cols-2 gap-6'>
-				{/* LEFT: Shakl */}
-				<div className='bg-slate-900/80 backdrop-blur-sm border border-white/5 rounded-2xl p-5 space-y-4'>
-					<h2 className='font-bold text-white flex items-center gap-2'>
-						<GraduationCap className='w-5 h-5 text-blue-400' />
+				{/* Shakl */}
+				<div className='bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/5 rounded-2xl p-5 space-y-4 shadow-sm'>
+					<h2 className='font-bold text-slate-900 dark:text-white flex items-center gap-2'>
+						<GraduationCap className='w-5 h-5 text-blue-600 dark:text-blue-400' />
 						Talabani tanlash
 					</h2>
-
 					<div>
 						<label className={labelCls}>Guruh</label>
 						<select
@@ -210,7 +199,6 @@ export default function CertificatesPage() {
 							))}
 						</select>
 					</div>
-
 					<div>
 						<label className={labelCls}>Talaba</label>
 						<select
@@ -229,7 +217,6 @@ export default function CertificatesPage() {
 							))}
 						</select>
 					</div>
-
 					<div>
 						<label className={labelCls}>Berilgan sana</label>
 						<input
@@ -239,13 +226,12 @@ export default function CertificatesPage() {
 							onChange={e => setIssueDate(e.target.value)}
 						/>
 					</div>
-
 					{selectedStudent && (
 						<div className='flex gap-3 pt-2'>
 							<button
 								onClick={handleSave}
 								disabled={saving}
-								className='flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white text-sm font-black transition-all'
+								className='flex-1 flex items-center justify-center gap-2 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 text-sm font-black transition-all'
 							>
 								{saving ? (
 									<>
@@ -261,14 +247,14 @@ export default function CertificatesPage() {
 							</button>
 							<button
 								onClick={handleDownload}
-								className='flex items-center gap-2 h-10 px-4 rounded-xl border border-blue-500/30 text-blue-400 text-sm font-bold hover:bg-blue-500/10 transition-colors'
+								className='flex items-center gap-2 h-10 px-4 rounded-xl border border-blue-200 dark:border-blue-500/30 text-blue-600 dark:text-blue-400 text-sm font-bold hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-colors'
 							>
 								<Download className='w-4 h-4' />
 								PNG
 							</button>
 							<button
-								onClick={handlePrint}
-								className='flex items-center gap-2 h-10 px-4 rounded-xl border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/5 transition-colors'
+								onClick={() => window.print()}
+								className='flex items-center gap-2 h-10 px-4 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 text-sm font-bold hover:bg-slate-50 dark:hover:bg-white/5 transition-colors'
 							>
 								<Printer className='w-4 h-4' />
 								Print
@@ -277,10 +263,10 @@ export default function CertificatesPage() {
 					)}
 				</div>
 
-				{/* RIGHT: Preview */}
+				{/* Preview */}
 				<div>
-					<h2 className='font-bold text-white mb-3 flex items-center gap-2'>
-						<Award className='w-5 h-5 text-amber-400' />
+					<h2 className='font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2'>
+						<Award className='w-5 h-5 text-amber-500' />
 						Sertifikat ko'rinishi
 					</h2>
 					<div id='cert-print-area' ref={certRef}>
@@ -296,41 +282,41 @@ export default function CertificatesPage() {
 
 			{/* Berilgan sertifikatlar */}
 			{issuedCerts.length > 0 && (
-				<div className='bg-slate-900/80 border border-white/5 rounded-2xl p-5'>
-					<h2 className='font-bold text-white mb-4 flex items-center gap-2'>
-						<CheckCircle2 className='w-5 h-5 text-emerald-400' />
+				<div className='bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-white/5 rounded-2xl p-5 shadow-sm'>
+					<h2 className='font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2'>
+						<CheckCircle2 className='w-5 h-5 text-emerald-600 dark:text-emerald-400' />
 						Berilgan sertifikatlar ({issuedCerts.length})
 					</h2>
 					<div className='overflow-x-auto'>
 						<table className='w-full text-sm'>
 							<thead>
-								<tr className='border-b border-white/5'>
+								<tr className='border-b border-slate-100 dark:border-white/5'>
 									{['Sertifikat №', 'Talaba', 'Kurs', 'Sana'].map(h => (
 										<th
 											key={h}
-											className='text-left text-[10px] font-black text-slate-500 uppercase tracking-widest px-4 py-3'
+											className='text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-4 py-3'
 										>
 											{h}
 										</th>
 									))}
 								</tr>
 							</thead>
-							<tbody className='divide-y divide-white/5'>
+							<tbody className='divide-y divide-slate-100 dark:divide-white/5'>
 								{issuedCerts.map(c => (
 									<tr
 										key={c.id}
-										className='hover:bg-white/[0.02] transition-colors'
+										className='hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors'
 									>
-										<td className='px-4 py-3 font-mono text-xs text-blue-400'>
+										<td className='px-4 py-3 font-mono text-xs text-blue-600 dark:text-blue-400'>
 											{c.certificate_number}
 										</td>
-										<td className='px-4 py-3 text-white font-semibold text-xs'>
+										<td className='px-4 py-3 text-slate-900 dark:text-white font-semibold text-xs'>
 											{c.full_name_at_issue}
 										</td>
-										<td className='px-4 py-3 text-slate-400 text-xs'>
+										<td className='px-4 py-3 text-slate-500 dark:text-slate-400 text-xs'>
 											{c.course_title_at_issue}
 										</td>
-										<td className='px-4 py-3 text-slate-400 text-xs'>
+										<td className='px-4 py-3 text-slate-400 dark:text-slate-500 text-xs'>
 											{new Date(c.issue_date).toLocaleDateString('uz-UZ')}
 										</td>
 									</tr>
@@ -344,7 +330,6 @@ export default function CertificatesPage() {
 	)
 }
 
-// ─── Sertifikat dizayni ─────────────────────────────────────────────────────
 function CertificatePreview({
 	fullName,
 	courseName,
@@ -361,12 +346,11 @@ function CertificatePreview({
 		month: 'long',
 		year: 'numeric',
 	})
-
 	return (
 		<div
 			style={{
 				width: '100%',
-				aspectRatio: '1.414', // A4 landscape
+				aspectRatio: '1.414',
 				background:
 					'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
 				border: '2px solid rgba(59,130,246,0.3)',
@@ -382,7 +366,6 @@ function CertificatePreview({
 				textAlign: 'center',
 			}}
 		>
-			{/* Decorative corner lines */}
 			{[
 				{ top: 12, left: 12 },
 				{ top: 12, right: 12 },
@@ -407,8 +390,6 @@ function CertificatePreview({
 					}}
 				/>
 			))}
-
-			{/* Glow orb */}
 			<div
 				style={{
 					position: 'absolute',
@@ -423,8 +404,6 @@ function CertificatePreview({
 					pointerEvents: 'none',
 				}}
 			/>
-
-			{/* Academy name */}
 			<p
 				style={{
 					color: '#60a5fa',
@@ -437,8 +416,6 @@ function CertificatePreview({
 			>
 				AL-KHARAZMI ACADEMY
 			</p>
-
-			{/* Title */}
 			<h1
 				style={{
 					color: '#f1f5f9',
@@ -460,8 +437,6 @@ function CertificatePreview({
 					margin: '0 auto 16px',
 				}}
 			/>
-
-			{/* Subtitle */}
 			<p
 				style={{
 					color: '#94a3b8',
@@ -472,8 +447,6 @@ function CertificatePreview({
 			>
 				Ushbu sertifikat quyidagi shaxsga beriladi
 			</p>
-
-			{/* Name */}
 			<h2
 				style={{
 					color: '#f8fafc',
@@ -487,8 +460,6 @@ function CertificatePreview({
 			>
 				{fullName}
 			</h2>
-
-			{/* Course */}
 			<p
 				style={{
 					color: '#94a3b8',
@@ -509,8 +480,6 @@ function CertificatePreview({
 			>
 				«{courseName}»
 			</p>
-
-			{/* Date & Number */}
 			<div
 				style={{
 					display: 'flex',

@@ -21,34 +21,24 @@ export default function LoginPage() {
 	const [focused, setFocused] = useState<string | null>(null)
 	const [mounted, setMounted] = useState(false)
 
-	// Bu flag redirect allaqachon boshlangan bo'lsa qayta ishlamaslik uchun
 	const redirecting = useRef(false)
 
 	useEffect(() => {
 		setMounted(true)
-
-		// Agar redirect jarayoni boshlangan bo'lsa, qayta ishlatmaymiz
 		if (redirecting.current) return
 
-		const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'
+		const isAdmin = localStorage.getItem('adminLoggedIn') === 'true'
+		const isTeacher = localStorage.getItem('teacherLoggedIn') === 'true'
 		const userRole = localStorage.getItem('userRole')
 
-		if (isLoggedIn && userRole) {
-			redirecting.current = true // Bir marta redirect qilamiz, holos
-
-			if (userRole === 'admin') {
-				router.replace('/admin/dashboard')
-			} else if (userRole === 'teacher') {
-				router.replace('/teacher-panel/dashboard')
-			} else {
-				// Noma'lum role bo'lsa — localStorage tozalab, login'da qoldiramiz
-				localStorage.removeItem('adminLoggedIn')
-				localStorage.removeItem('userRole')
-				redirecting.current = false
-			}
+		if (userRole === 'admin' && isAdmin) {
+			redirecting.current = true
+			router.replace('/admin/dashboard')
+		} else if (userRole === 'teacher' && isTeacher) {
+			redirecting.current = true
+			router.replace('/teacher-panel/dashboard')
 		}
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []) // ← router dependency YO'Q — faqat mount'da bir marta ishlaydi
+	}, [router])
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -57,18 +47,20 @@ export default function LoginPage() {
 
 		await new Promise(r => setTimeout(r, 900))
 
-		if (redirecting.current) return // Allaqachon redirect ketayotgan bo'lsa — to'xtaymiz
+		if (redirecting.current) return
 
 		if (email === 'inoqdost478@gmail.com' && password === 'itparkadmin') {
 			redirecting.current = true
 			localStorage.setItem('adminLoggedIn', 'true')
 			localStorage.setItem('userRole', 'admin')
+			localStorage.removeItem('teacherLoggedIn')
 			router.replace('/admin/dashboard')
 		} else if (email === 'a1ibekdew0@gmail.com' && password === 'itparkadmin') {
 			redirecting.current = true
-			localStorage.setItem('adminLoggedIn', 'true')
+			localStorage.setItem('teacherLoggedIn', 'true') // To'g'ri kalit
 			localStorage.setItem('userRole', 'teacher')
-			router.replace('/teacher-panel')
+			localStorage.removeItem('adminLoggedIn')
+			router.replace('/teacher-panel/dashboard') // To'liq path
 		} else {
 			setError("Email yoki parol noto'g'ri.")
 			setLoading(false)
@@ -95,24 +87,12 @@ export default function LoginPage() {
         .err-shake{ animation: shake .4s ease; }
       `}</style>
 
-			<div
-				className='relative min-h-screen flex items-center justify-center px-4 py-12
-        bg-white dark:bg-[#070b16] transition-colors duration-300 overflow-hidden'
-			>
+			<div className='relative min-h-screen flex items-center justify-center px-4 py-12 bg-white dark:bg-[#070b16] transition-colors duration-300 overflow-hidden'>
 				{/* Mesh gradient bg */}
 				<div className='absolute inset-0 pointer-events-none'>
-					<div
-						className='absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full
-            bg-blue-200/40 dark:bg-blue-600/15 blur-[120px]'
-					/>
-					<div
-						className='absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full
-            bg-cyan-200/30 dark:bg-cyan-500/10 blur-[100px]'
-					/>
-					<div
-						className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-            w-[700px] h-[300px] rounded-full bg-indigo-100/30 dark:bg-indigo-600/8 blur-[80px]'
-					/>
+					<div className='absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-blue-200/40 dark:bg-blue-600/15 blur-[120px]' />
+					<div className='absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-cyan-200/30 dark:bg-cyan-500/10 blur-[100px]' />
+					<div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] rounded-full bg-indigo-100/30 dark:bg-indigo-600/8 blur-[80px]' />
 					<div
 						className='absolute inset-0 opacity-[0.035] dark:opacity-[0.06]'
 						style={{
@@ -125,30 +105,16 @@ export default function LoginPage() {
 
 				{/* Card */}
 				<div className='card-in relative w-full max-w-[420px]'>
-					<div
-						className='absolute -inset-px rounded-[28px] bg-gradient-to-br
-            from-blue-400/30 via-transparent to-cyan-400/20
-            dark:from-blue-500/20 dark:to-cyan-500/15 blur-[2px]'
-					/>
+					<div className='absolute -inset-px rounded-[28px] bg-gradient-to-br from-blue-400/30 via-transparent to-cyan-400/20 dark:from-blue-500/20 dark:to-cyan-500/15 blur-[2px]' />
 
-					<div
-						className='relative bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl
-            rounded-[26px] shadow-2xl shadow-blue-900/8 dark:shadow-black/50
-            border border-white/80 dark:border-slate-700/50 overflow-hidden'
-					>
-						<div
-							className='h-[3px] bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600
-              bg-[length:200%_100%]'
-						/>
+					<div className='relative bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl rounded-[26px] shadow-2xl shadow-blue-900/8 dark:shadow-black/50 border border-white/80 dark:border-slate-700/50 overflow-hidden'>
+						<div className='h-[3px] bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-[length:200%_100%]' />
 
 						<div className='px-8 pt-8 pb-7'>
 							<div className='flex flex-col items-center mb-8'>
 								<div className='relative mb-4'>
 									<div className='absolute inset-0 bg-blue-500/25 rounded-2xl blur-xl scale-110' />
-									<div
-										className='relative w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700
-                    rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/35'
-									>
+									<div className='relative w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/35'>
 										<GraduationCap
 											className='w-7 h-7 text-white'
 											strokeWidth={1.75}
@@ -165,12 +131,8 @@ export default function LoginPage() {
 
 							{error && (
 								<div
-									key={error} // ← har yangi xato uchun shake animatsiyasi qayta ishlaydi
-									className='err-shake flex items-center gap-2.5
-                  bg-red-50 dark:bg-red-500/10
-                  border border-red-200 dark:border-red-500/25
-                  text-red-600 dark:text-red-400
-                  rounded-2xl px-4 py-3 mb-5 text-xs font-semibold'
+									key={error}
+									className='err-shake flex items-center gap-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/25 text-red-600 dark:text-red-400 rounded-2xl px-4 py-3 mb-5 text-xs font-semibold'
 								>
 									<AlertCircle className='w-4 h-4 shrink-0' />
 									{error}
@@ -179,24 +141,14 @@ export default function LoginPage() {
 
 							<form onSubmit={handleSubmit} className='space-y-3.5'>
 								<div>
-									<label
-										className='block text-[10px] font-black text-slate-400 dark:text-slate-500
-                    uppercase tracking-[0.12em] mb-2'
-									>
+									<label className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em] mb-2'>
 										Email manzil
 									</label>
 									<div
-										className={`group relative rounded-xl border transition-all duration-200 ${
-											focused === 'email'
-												? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800'
-												: error
-													? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50'
-													: 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'
-										}`}
+										className={`group relative rounded-xl border transition-all duration-200 ${focused === 'email' ? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800' : error ? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50' : 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'}`}
 									>
 										<svg
-											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 pointer-events-none
-                      ${focused === 'email' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
+											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 pointer-events-none ${focused === 'email' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
 											fill='none'
 											stroke='currentColor'
 											viewBox='0 0 24 24'
@@ -220,33 +172,20 @@ export default function LoginPage() {
 											onBlur={() => setFocused(null)}
 											placeholder='admin@example.com'
 											disabled={loading}
-											className='w-full h-11 pl-10 pr-4 text-sm bg-transparent
-                        text-slate-900 dark:text-white
-                        placeholder-slate-400 dark:placeholder-slate-600
-                        focus:outline-none disabled:opacity-50 rounded-xl'
+											className='w-full h-11 pl-10 pr-4 text-sm bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none disabled:opacity-50 rounded-xl'
 										/>
 									</div>
 								</div>
 
 								<div>
-									<label
-										className='block text-[10px] font-black text-slate-400 dark:text-slate-500
-                    uppercase tracking-[0.12em] mb-2'
-									>
+									<label className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em] mb-2'>
 										Parol
 									</label>
 									<div
-										className={`relative rounded-xl border transition-all duration-200 ${
-											focused === 'password'
-												? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800'
-												: error
-													? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50'
-													: 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'
-										}`}
+										className={`relative rounded-xl border transition-all duration-200 ${focused === 'password' ? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800' : error ? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50' : 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'}`}
 									>
 										<svg
-											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 pointer-events-none
-                      ${focused === 'password' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
+											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 pointer-events-none ${focused === 'password' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
 											fill='none'
 											stroke='currentColor'
 											viewBox='0 0 24 24'
@@ -270,18 +209,12 @@ export default function LoginPage() {
 											onBlur={() => setFocused(null)}
 											placeholder='••••••••'
 											disabled={loading}
-											className='w-full h-11 pl-10 pr-11 text-sm bg-transparent
-                        text-slate-900 dark:text-white
-                        placeholder-slate-400 dark:placeholder-slate-600
-                        focus:outline-none disabled:opacity-50 rounded-xl'
+											className='w-full h-11 pl-10 pr-11 text-sm bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none disabled:opacity-50 rounded-xl'
 										/>
 										<button
 											type='button'
 											onClick={() => setShowPassword(v => !v)}
-											className='absolute right-3.5 top-1/2 -translate-y-1/2
-                        text-slate-400 dark:text-slate-500
-                        hover:text-slate-700 dark:hover:text-slate-200
-                        transition-colors duration-150 p-0.5'
+											className='absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-150 p-0.5'
 										>
 											{showPassword ? (
 												<EyeOff className='w-4 h-4' />
@@ -296,22 +229,9 @@ export default function LoginPage() {
 									<button
 										type='submit'
 										disabled={loading || !email || !password}
-										className='group relative w-full h-11 rounded-xl font-black text-sm
-                      transition-all duration-200 overflow-hidden
-                      disabled:cursor-not-allowed
-                      enabled:hover:scale-[1.02] enabled:active:scale-[0.98]
-                      disabled:bg-slate-100 dark:disabled:bg-slate-800
-                      disabled:text-slate-400 dark:disabled:text-slate-600
-                      enabled:bg-gradient-to-r enabled:from-blue-600 enabled:to-blue-500
-                      enabled:hover:from-blue-500 enabled:hover:to-cyan-500
-                      enabled:text-white enabled:shadow-lg enabled:shadow-blue-500/30
-                      flex items-center justify-center gap-2'
+										className='group relative w-full h-11 rounded-xl font-black text-sm transition-all duration-200 overflow-hidden disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 enabled:bg-gradient-to-r enabled:from-blue-600 enabled:to-blue-500 enabled:hover:from-blue-500 enabled:hover:to-cyan-500 enabled:text-white enabled:shadow-lg enabled:shadow-blue-500/30 flex items-center justify-center gap-2'
 									>
-										<div
-											className='absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent
-                      -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out'
-										/>
-
+										<div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out' />
 										{loading ? (
 											<>
 												<svg
@@ -357,7 +277,6 @@ export default function LoginPage() {
 							</div>
 						</div>
 					</div>
-
 					<p className='text-center text-[11px] text-slate-400 dark:text-slate-600 mt-5 tracking-wide'>
 						© 2025 IT-Park & Al-Khorazmiy · Shovot, Xorazm
 					</p>
