@@ -63,19 +63,9 @@ type Student = {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────
-const COURSE_MAP: Record<number, string> = {
-	1: 'Web Development',
-	2: 'English Course',
-	3: 'Data Science',
-	4: 'AI & ML',
-}
-const COURSE_ID_MAP: Record<string, number> = {
-	'Web Development': 1,
-	'English Course': 2,
-	'Data Science': 3,
-	'AI & ML': 4,
-}
-const courses = ['Web Development', 'English Course', 'Data Science', 'AI & ML']
+// Kurslar DB dan yuklanadi — pastda fetchCourses() bilan to'ldiriladi
+let COURSE_MAP: Record<number, string> = {}
+let COURSE_ID_MAP: Record<string, number> = {}
 
 const colors = [
 	'from-blue-500 to-indigo-600',
@@ -454,15 +444,17 @@ const emptyForm: FormState = {
 	parent_phone: '',
 	certificate_id: '',
 	pinfl: '',
-	course: 'Web Development',
+	course: '',
 }
 
 function StudentForm({
 	form,
 	onChange,
+	coursesDB,
 }: {
 	form: FormState
 	onChange: (f: FormState) => void
+	coursesDB: { id: number; title_en: string; title_uz: string }[]
 }) {
 	const set =
 		(key: keyof FormState) =>
@@ -518,8 +510,12 @@ function StudentForm({
 						value={form.course}
 						onChange={set('course')}
 					>
-						{courses.map(c => (
-							<option key={c}>{c}</option>
+						<option value=''>— Kurs tanlang —</option>
+						{coursesDB.map(c => (
+							<option key={c.id} value={c.title_en}>
+								{c.title_en}
+								{c.title_uz ? ` · ${c.title_uz}` : ''}
+							</option>
 						))}
 					</select>
 				</div>
@@ -572,7 +568,11 @@ function StudentForm({
 }
 
 // ─── Main Page ─────────────────────────────────────────────────────────────
+// ── CourseDB type ────────────────────────────────────────────────────────
+type CourseDB = { id: number; title_en: string; title_uz: string }
+
 export default function StudentsPage() {
+	const [coursesDB, setCoursesDB] = useState<CourseDB[]>([])
 	const [students, setStudents] = useState<Student[]>([])
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
@@ -608,7 +608,67 @@ export default function StudentsPage() {
 		setLoading(false)
 	}
 
+	const fetchCourses = async () => {
+		const { data } = await supabase
+			.from('courses')
+			.select('id, title_en, title_uz')
+			.order('title_en')
+		let list = data || []
+
+		// Agar courses jadvali bo'sh bo'lsa — default 4 ta kursni qo'shamiz
+		if (list.length === 0) {
+			const defaults = [
+				{
+					title_en: 'Web Development',
+					title_uz: 'Veb Dasturlash',
+					price: 0,
+					rating: 5.0,
+					lessons_count: 0,
+					total_students: 0,
+				},
+				{
+					title_en: 'English Course',
+					title_uz: 'Ingliz tili',
+					price: 0,
+					rating: 5.0,
+					lessons_count: 0,
+					total_students: 0,
+				},
+				{
+					title_en: 'Data Science',
+					title_uz: "Ma'lumotlar Fanlari",
+					price: 0,
+					rating: 5.0,
+					lessons_count: 0,
+					total_students: 0,
+				},
+				{
+					title_en: 'AI & ML',
+					title_uz: "Sun'iy Intellekt",
+					price: 0,
+					rating: 5.0,
+					lessons_count: 0,
+					total_students: 0,
+				},
+			]
+			const { data: inserted } = await supabase
+				.from('courses')
+				.insert(defaults)
+				.select('id, title_en, title_uz')
+			list = inserted || []
+		}
+
+		setCoursesDB(list)
+		COURSE_MAP = Object.fromEntries(list.map(c => [c.id, c.title_en]))
+		COURSE_ID_MAP = Object.fromEntries(list.map(c => [c.title_en, c.id]))
+		// Birinchi kursni default qilib o'rnatamiz
+		if (list.length > 0) {
+			setForm(prev => ({ ...prev, course: prev.course || list[0].title_en }))
+		}
+	}
+
 	useEffect(() => {
+		fetchCourses()
 		fetchStudents()
 	}, [])
 
@@ -625,7 +685,7 @@ export default function StudentsPage() {
 				parent_phone: form.parent_phone,
 				certificate_id: form.certificate_id,
 				pinfl: form.pinfl,
-				course_id: COURSE_ID_MAP[form.course] ?? 1,
+				course_id: COURSE_ID_MAP[form.course] ?? null,
 				payment_amount: 0,
 				status: 'active',
 			},
@@ -655,7 +715,7 @@ export default function StudentsPage() {
 				parent_phone: editItem.parent_phone,
 				certificate_id: editItem.certificate_id,
 				pinfl: editItem.pinfl,
-				course_id: COURSE_ID_MAP[editItem.course] ?? editItem.course_id,
+				course_id: COURSE_ID_MAP[editItem.course] ?? editItem.course_id ?? null,
 				status: editItem.status,
 			})
 			.eq('id', editItem.id)
@@ -715,7 +775,7 @@ export default function StudentsPage() {
 						setForm(emptyForm)
 					}}
 				>
-					<StudentForm form={form} onChange={setForm} />
+					<StudentForm form={form} onChange={setForm} coursesDB={coursesDB} />
 					<div className='flex gap-3 pt-4 mt-2 border-t border-slate-100 dark:border-slate-800'>
 						<button
 							onClick={() => {
@@ -823,8 +883,12 @@ export default function StudentsPage() {
 										)
 									}
 								>
-									{courses.map(c => (
-										<option key={c}>{c}</option>
+									<option value=''>— Kurs tanlang —</option>
+									{coursesDB.map(c => (
+										<option key={c.id} value={c.title_en}>
+											{c.title_en}
+											{c.title_uz ? ` · ${c.title_uz}` : ''}
+										</option>
 									))}
 								</select>
 							</div>
