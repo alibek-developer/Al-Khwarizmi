@@ -20,12 +20,40 @@ const supabase = createClient(
 	process.env.NEXT_PUBLIC_SUPABASE_URL!,
 	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
-const MENTOR_ID = process.env.NEXT_PUBLIC_MENTOR_ID || ''
+// ── Mentor ID — 3 usulda aniqlanadi ──────────────────────────────────────
+// 1. localStorage (login paytida saqlangan)
+// 2. NEXT_PUBLIC_MENTOR_ID env
+// 3. Supabase auth → mentors.email
+async function getMentorId(): Promise<number | null> {
+	// 1. Login paytida saqlangan ID
+	const stored = localStorage.getItem('teacherMentorId')
+	if (stored && parseInt(stored) > 0) return parseInt(stored)
 
-type Group = { id: string; name: string }
+	// 2. Env variable
+	const env = process.env.NEXT_PUBLIC_MENTOR_ID
+	if (env && parseInt(env) > 0) return parseInt(env)
+
+	// 3. Supabase auth → email orqali
+	const {
+		data: { user },
+	} = await supabase.auth.getUser()
+	if (!user?.email) return null
+	const { data } = await supabase
+		.from('mentors')
+		.select('id')
+		.eq('email', user.email)
+		.single()
+	if (data?.id) {
+		localStorage.setItem('teacherMentorId', String(data.id))
+		return data.id
+	}
+	return null
+}
+
+type Group = { id: number; name: string }
 type Material = {
-	id: string
-	group_id: string
+	id: number
+	group_id: number
 	title: string
 	file_url: string
 	link_url: string
@@ -34,16 +62,9 @@ type Material = {
 	group_name?: string
 }
 
-const CATEGORIES = [
-	'Darslik',
-	'Video',
-	'Amaliyot',
-	"Qo'shimcha",
-	'Test',
-	'Boshqa',
-]
+const CATS = ['Darslik', 'Video', 'Amaliyot', "Qo'shimcha", 'Test', 'Boshqa']
 
-const categoryColors: Record<string, string> = {
+const CAT_COLOR: Record<string, string> = {
 	Darslik:
 		'bg-blue-50   dark:bg-blue-500/15   text-blue-700   dark:text-blue-400',
 	Video: 'bg-red-50    dark:bg-red-500/15    text-red-700    dark:text-red-400',
@@ -56,10 +77,12 @@ const categoryColors: Record<string, string> = {
 		'bg-slate-100 dark:bg-slate-500/15  text-slate-600  dark:text-slate-400',
 }
 
-const inputCls =
+const iCls =
 	'w-full h-10 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors'
-const labelCls =
-	'block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5'
+const lCls =
+	'block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5'
+const fBtnOff =
+	'bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'
 
 export default function MaterialsPage() {
 	const [groups, setGroups] = useState<Group[]>([])
@@ -67,40 +90,51 @@ export default function MaterialsPage() {
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
 	const [showAdd, setShowAdd] = useState(false)
-	const [filterGroup, setFilterGroup] = useState('all')
-	const [filterCat, setFilterCat] = useState('all')
-	const [toast, setToast] = useState<{
-		msg: string
-		type: 'success' | 'error'
-	} | null>(null)
+	const [fGroup, setFGroup] = useState<number | 'all'>('all')
+	const [fCat, setFCat] = useState<string>('all')
+	const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 	const [form, setForm] = useState({
-		group_id: '',
+		group_id: '' as number | '',
 		title: '',
 		file_url: '',
 		link_url: '',
 		category: 'Darslik',
 	})
 
-	useEffect(() => {
-		fetchAll()
-	}, [])
-
-	const showToast = (msg: string, type: 'success' | 'error') => {
-		setToast({ msg, type })
+	const msg = (m: string, ok = true) => {
+		setToast({ msg: m, ok })
 		setTimeout(() => setToast(null), 3000)
 	}
 
-	const fetchAll = async () => {
+	const [mentorId, setMentorId] = useState<number | null>(null)
+	const [mLoading, setMLoading] = useState(true)
+
+	useEffect(() => {
+		getMentorId().then(id => {
+			setMentorId(id)
+			setMLoading(false)
+			if (id) fetchAll(id)
+			else setLoading(false)
+		})
+	}, [])
+
+	const fetchAll = async (mid?: number) => {
+		const id = mid ?? mentorId
+		if (!id) {
+			setLoading(false)
+			return
+		}
 		setLoading(true)
 		const { data: gData } = await supabase
 			.from('groups')
 			.select('id, name')
-			.eq('mentor_id', MENTOR_ID)
+			.eq('mentor_id', id)
 		setGroups(gData || [])
 		if (!gData?.length) {
 			setLoading(false)
 			return
 		}
+
 		const gMap = Object.fromEntries(gData.map(g => [g.id, g.name]))
 		const { data: mData } = await supabase
 			.from('materials')
@@ -110,6 +144,7 @@ export default function MaterialsPage() {
 				gData.map(g => g.id),
 			)
 			.order('created_at', { ascending: false })
+
 		setMaterials(
 			(mData || []).map(m => ({ ...m, group_name: gMap[m.group_id] || '—' })),
 		)
@@ -119,23 +154,21 @@ export default function MaterialsPage() {
 	const handleAdd = async () => {
 		if (!form.title || !form.group_id) return
 		setSaving(true)
-		const { error } = await supabase
-			.from('materials')
-			.insert([
-				{
-					group_id: form.group_id,
-					title: form.title,
-					file_url: form.file_url || null,
-					link_url: form.link_url || null,
-					category: form.category,
-				},
-			])
+		const { error } = await supabase.from('materials').insert([
+			{
+				group_id: form.group_id,
+				title: form.title,
+				file_url: form.file_url || null,
+				link_url: form.link_url || null,
+				category: form.category,
+			},
+		])
 		setSaving(false)
 		if (error) {
-			showToast('Xato: ' + error.message, 'error')
+			msg('Xato: ' + error.message, false)
 			return
 		}
-		showToast("Material qo'shildi!", 'success')
+		msg("Material qo'shildi!")
 		setShowAdd(false)
 		setForm({
 			group_id: '',
@@ -147,32 +180,27 @@ export default function MaterialsPage() {
 		fetchAll()
 	}
 
-	const handleDelete = async (id: string) => {
+	const handleDelete = async (id: number) => {
 		const { error } = await supabase.from('materials').delete().eq('id', id)
 		if (error) {
-			showToast("O'chirishda xato", 'error')
+			msg("O'chirishda xato", false)
 			return
 		}
-		showToast("Material o'chirildi!", 'success')
+		msg("Material o'chirildi!")
 		setMaterials(p => p.filter(m => m.id !== id))
 	}
 
 	const filtered = materials
-		.filter(m => filterGroup === 'all' || m.group_id === filterGroup)
-		.filter(m => filterCat === 'all' || m.category === filterCat)
-
-	const filterBtnBase =
-		'px-3 py-1.5 rounded-xl text-xs font-bold transition-all'
-	const filterBtnOff =
-		'bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/20'
+		.filter(m => fGroup === 'all' || m.group_id === fGroup)
+		.filter(m => fCat === 'all' || m.category === fCat)
 
 	return (
-		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 space-y-6 transition-colors duration-300'>
+		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 p-6 space-y-5 transition-colors'>
 			{toast && (
 				<div
-					className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
+					className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.ok ? 'bg-emerald-600' : 'bg-red-600'}`}
 				>
-					{toast.type === 'success' ? (
+					{toast.ok ? (
 						<CheckCircle2 className='w-4 h-4' />
 					) : (
 						<AlertCircle className='w-4 h-4' />
@@ -181,7 +209,7 @@ export default function MaterialsPage() {
 				</div>
 			)}
 
-			{/* Add Modal */}
+			{/* ── Add Modal ── */}
 			{showAdd && (
 				<div
 					className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm'
@@ -205,15 +233,20 @@ export default function MaterialsPage() {
 						<div className='p-6 space-y-4'>
 							<div className='grid grid-cols-2 gap-3'>
 								<div>
-									<label className={labelCls}>Guruh *</label>
+									<label className={lCls}>Guruh *</label>
 									<select
-										className={inputCls}
+										className={iCls}
 										value={form.group_id}
 										onChange={e =>
-											setForm(p => ({ ...p, group_id: e.target.value }))
+											setForm(p => ({
+												...p,
+												group_id: e.target.value
+													? parseInt(e.target.value)
+													: '',
+											}))
 										}
 									>
-										<option value=''>Tanlang</option>
+										<option value=''>— Tanlang —</option>
 										{groups.map(g => (
 											<option key={g.id} value={g.id}>
 												{g.name}
@@ -222,24 +255,25 @@ export default function MaterialsPage() {
 									</select>
 								</div>
 								<div>
-									<label className={labelCls}>Kategoriya</label>
+									<label className={lCls}>Kategoriya</label>
 									<select
-										className={inputCls}
+										className={iCls}
 										value={form.category}
 										onChange={e =>
 											setForm(p => ({ ...p, category: e.target.value }))
 										}
 									>
-										{CATEGORIES.map(c => (
+										{CATS.map(c => (
 											<option key={c}>{c}</option>
 										))}
 									</select>
 								</div>
 							</div>
+
 							<div>
-								<label className={labelCls}>Sarlavha *</label>
+								<label className={lCls}>Sarlavha *</label>
 								<input
-									className={inputCls}
+									className={iCls}
 									placeholder='Material nomi'
 									value={form.title}
 									onChange={e =>
@@ -248,9 +282,9 @@ export default function MaterialsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelCls}>Fayl URL</label>
+								<label className={lCls}>Fayl URL</label>
 								<input
-									className={inputCls}
+									className={iCls}
 									placeholder='https://drive.google.com/...'
 									value={form.file_url}
 									onChange={e =>
@@ -259,9 +293,9 @@ export default function MaterialsPage() {
 								/>
 							</div>
 							<div>
-								<label className={labelCls}>Havola (Link)</label>
+								<label className={lCls}>Havola (Link)</label>
 								<input
-									className={inputCls}
+									className={iCls}
 									placeholder='https://youtube.com/...'
 									value={form.link_url}
 									onChange={e =>
@@ -269,6 +303,7 @@ export default function MaterialsPage() {
 									}
 								/>
 							</div>
+
 							<div className='flex gap-3 pt-2'>
 								<button
 									onClick={() => setShowAdd(false)}
@@ -299,6 +334,7 @@ export default function MaterialsPage() {
 				</div>
 			)}
 
+			{/* Header */}
 			<div className='flex items-center justify-between'>
 				<div>
 					<h1 className='text-2xl font-black text-slate-900 dark:text-white'>
@@ -312,23 +348,24 @@ export default function MaterialsPage() {
 					onClick={() => setShowAdd(true)}
 					className='flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold px-5 py-2.5 rounded-xl transition-all hover:scale-105 shadow-lg shadow-blue-500/20'
 				>
-					<Plus className='w-4 h-4' /> Material Qo'shish
+					<Plus className='w-4 h-4' />
+					Material Qo'shish
 				</button>
 			</div>
 
 			{/* Guruh filter */}
 			<div className='flex gap-2 flex-wrap'>
 				<button
-					onClick={() => setFilterGroup('all')}
-					className={`${filterBtnBase} ${filterGroup === 'all' ? 'bg-blue-600 text-white shadow-sm' : filterBtnOff}`}
+					onClick={() => setFGroup('all')}
+					className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${fGroup === 'all' ? 'bg-blue-600 text-white shadow-sm' : fBtnOff}`}
 				>
 					Barcha guruhlar
 				</button>
 				{groups.map(g => (
 					<button
 						key={g.id}
-						onClick={() => setFilterGroup(g.id)}
-						className={`${filterBtnBase} ${filterGroup === g.id ? 'bg-blue-600 text-white shadow-sm' : filterBtnOff}`}
+						onClick={() => setFGroup(g.id)}
+						className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${fGroup === g.id ? 'bg-blue-600 text-white shadow-sm' : fBtnOff}`}
 					>
 						{g.name}
 					</button>
@@ -338,32 +375,31 @@ export default function MaterialsPage() {
 			{/* Kategoriya filter */}
 			<div className='flex gap-2 flex-wrap'>
 				<button
-					onClick={() => setFilterCat('all')}
-					className={`${filterBtnBase} ${filterCat === 'all' ? 'bg-slate-700 text-white shadow-sm' : filterBtnOff}`}
+					onClick={() => setFCat('all')}
+					className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${fCat === 'all' ? 'bg-slate-700 text-white shadow-sm' : fBtnOff}`}
 				>
 					Barchasi
 				</button>
-				{CATEGORIES.map(c => (
+				{CATS.map(c => (
 					<button
 						key={c}
-						onClick={() => setFilterCat(c)}
-						className={`${filterBtnBase} ${filterCat === c ? categoryColors[c] + ' border border-current' : filterBtnOff}`}
+						onClick={() => setFCat(c)}
+						className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${fCat === c ? CAT_COLOR[c] + ' border border-current' : fBtnOff}`}
 					>
 						{c}
 					</button>
 				))}
 			</div>
 
+			{/* Body */}
 			{loading ? (
 				<div className='flex items-center justify-center py-20 gap-3'>
 					<Loader2 className='w-5 h-5 animate-spin text-blue-500' />
-					<span className='text-slate-400 dark:text-slate-500'>
-						Yuklanmoqda...
-					</span>
+					<span className='text-slate-400'>Yuklanmoqda...</span>
 				</div>
 			) : filtered.length === 0 ? (
-				<div className='text-center py-20 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl'>
-					<BookOpen className='w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3' />
+				<div className='flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl gap-3'>
+					<BookOpen className='w-14 h-14 text-slate-300 dark:text-slate-700' />
 					<p className='text-slate-400 dark:text-slate-500'>
 						Material topilmadi
 					</p>
@@ -383,9 +419,9 @@ export default function MaterialsPage() {
 										<Link className='w-4 h-4 text-blue-600 dark:text-blue-400' />
 									)}
 								</div>
-								<div className='flex items-center gap-1'>
+								<div className='flex items-center gap-1.5'>
 									<span
-										className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${categoryColors[m.category] || 'bg-slate-100 dark:bg-slate-500/15 text-slate-500'}`}
+										className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${CAT_COLOR[m.category] || 'bg-slate-100 dark:bg-slate-500/15 text-slate-500'}`}
 									>
 										{m.category}
 									</span>
@@ -397,12 +433,14 @@ export default function MaterialsPage() {
 									</button>
 								</div>
 							</div>
+
 							<h3 className='font-black text-slate-900 dark:text-white mb-1 line-clamp-2 text-sm'>
 								{m.title}
 							</h3>
 							<p className='text-xs text-blue-600 dark:text-blue-400 font-semibold mb-3'>
 								{m.group_name}
 							</p>
+
 							<div className='flex gap-3 pt-3 border-t border-slate-100 dark:border-white/5'>
 								{m.file_url && (
 									<a

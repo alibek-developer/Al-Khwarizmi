@@ -15,43 +15,44 @@ const supabase = createClient(
 	process.env.NEXT_PUBLIC_SUPABASE_URL!,
 	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
 )
-const MENTOR_ID = process.env.NEXT_PUBLIC_MENTOR_ID || ''
 
-type Group = { id: string; name: string; schedule: string }
+type Group = {
+	id: number
+	name: string
+	schedule_days: string
+	class_time: string
+}
 type Student = {
-	id: string
+	id: number
 	first_name: string
 	last_name: string
 	phone?: string
 }
-type AttendanceStatus = 'present' | 'absent' | 'late'
-type AttendanceMap = Record<string, AttendanceStatus>
+type AttStatus = 'present' | 'absent' | 'late'
+type AttMap = Record<number, AttStatus>
 
-const statusConfig = {
+const STATUS = {
 	present: {
 		label: 'Keldi',
 		icon: CheckCircle2,
-		cls: 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-emerald-300 dark:hover:border-emerald-500/50 bg-white dark:bg-transparent',
-		activeCls:
-			'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400',
+		off: 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-transparent hover:border-emerald-300 dark:hover:border-emerald-600',
+		on: 'bg-emerald-50 dark:bg-emerald-500/15 border-emerald-400 dark:border-emerald-500 text-emerald-700 dark:text-emerald-400',
 	},
 	late: {
 		label: 'Kech',
 		icon: Clock,
-		cls: 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-amber-300 dark:hover:border-amber-500/50 bg-white dark:bg-transparent',
-		activeCls:
-			'bg-amber-50 dark:bg-amber-500/15 border-amber-400 dark:border-amber-500 text-amber-700 dark:text-amber-400',
+		off: 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-transparent hover:border-amber-300 dark:hover:border-amber-600',
+		on: 'bg-amber-50 dark:bg-amber-500/15 border-amber-400 dark:border-amber-500 text-amber-700 dark:text-amber-400',
 	},
 	absent: {
 		label: 'Kelmadi',
 		icon: AlertCircle,
-		cls: 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-red-300 dark:hover:border-red-500/50 bg-white dark:bg-transparent',
-		activeCls:
-			'bg-red-50 dark:bg-red-500/15 border-red-400 dark:border-red-500 text-red-700 dark:text-red-400',
+		off: 'border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 bg-white dark:bg-transparent hover:border-red-300 dark:hover:border-red-600',
+		on: 'bg-red-50 dark:bg-red-500/15 border-red-400 dark:border-red-500 text-red-700 dark:text-red-400',
 	},
 }
 
-const avatarColors = [
+const COLORS = [
 	'from-blue-500 to-indigo-600',
 	'from-pink-500 to-rose-600',
 	'from-emerald-500 to-teal-600',
@@ -60,46 +61,71 @@ const avatarColors = [
 	'from-amber-500 to-orange-600',
 ]
 
+// ── Mentor ID — 3 usulda aniqlanadi ─────────────────────────────────────
+async function getMentorId(): Promise<number | null> {
+	const stored = localStorage.getItem('teacherMentorId')
+	if (stored && parseInt(stored) > 0) return parseInt(stored)
+	const env = process.env.NEXT_PUBLIC_MENTOR_ID
+	if (env && parseInt(env) > 0) return parseInt(env)
+	const {
+		data: { user },
+	} = await supabase.auth.getUser()
+	if (!user?.email) return null
+	const { data } = await supabase
+		.from('mentors')
+		.select('id')
+		.eq('email', user.email)
+		.single()
+	if (data?.id) {
+		localStorage.setItem('teacherMentorId', String(data.id))
+		return data.id
+	}
+	return null
+}
+
 export default function AttendancePage() {
+	const [mentorId, setMentorId] = useState<number | null>(null)
 	const [groups, setGroups] = useState<Group[]>([])
-	const [selectedGroup, setSelectedGroup] = useState('')
+	const [selGroup, setSelGroup] = useState<Group | null>(null)
 	const [students, setStudents] = useState<Student[]>([])
-	const [attendance, setAttendance] = useState<AttendanceMap>({})
-	const [selectedDate, setSelectedDate] = useState(
-		new Date().toISOString().slice(0, 10),
-	)
-	const [loading, setLoading] = useState(false)
+	const [att, setAtt] = useState<AttMap>({})
+	const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+	const [gLoading, setGLoading] = useState(true)
+	const [sLoading, setSLoading] = useState(false)
 	const [saving, setSaving] = useState(false)
-	const [groupsLoading, setGroupsLoading] = useState(true)
-	const [toast, setToast] = useState<{
-		msg: string
-		type: 'success' | 'error'
-	} | null>(null)
+	const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null)
 
-	useEffect(() => {
-		fetchGroups()
-	}, [])
-	useEffect(() => {
-		if (selectedGroup) fetchStudents(selectedGroup)
-	}, [selectedGroup, selectedDate])
-
-	const showToast = (msg: string, type: 'success' | 'error') => {
-		setToast({ msg, type })
+	const msg = (m: string, ok = true) => {
+		setToast({ msg: m, ok })
 		setTimeout(() => setToast(null), 3000)
 	}
 
-	const fetchGroups = async () => {
-		setGroupsLoading(true)
-		const { data } = await supabase
-			.from('groups')
-			.select('id, name, schedule')
-			.eq('mentor_id', MENTOR_ID)
-		setGroups(data || [])
-		setGroupsLoading(false)
-	}
+	// 1. Mentor ID → guruhlar
+	useEffect(() => {
+		getMentorId().then(id => {
+			setMentorId(id)
+			if (!id) {
+				setGLoading(false)
+				return
+			}
+			supabase
+				.from('groups')
+				.select('id, name, schedule_days, class_time')
+				.eq('mentor_id', id)
+				.then(({ data }) => {
+					setGroups(data || [])
+					setGLoading(false)
+				})
+		})
+	}, [])
 
-	const fetchStudents = async (groupId: string) => {
-		setLoading(true)
+	// 2. Guruh + sana o'zgarganda talabalar + davomat
+	useEffect(() => {
+		if (selGroup) fetchStudents(selGroup.id)
+	}, [selGroup, date])
+
+	const fetchStudents = async (groupId: number) => {
+		setSLoading(true)
 		const { data: enData } = await supabase
 			.from('group_enrollments')
 			.select('student_id')
@@ -107,7 +133,8 @@ export default function AttendancePage() {
 		const ids = (enData || []).map(e => e.student_id)
 		if (!ids.length) {
 			setStudents([])
-			setLoading(false)
+			setAtt({})
+			setSLoading(false)
 			return
 		}
 
@@ -122,59 +149,57 @@ export default function AttendancePage() {
 			.from('attendance')
 			.select('student_id, status')
 			.eq('group_id', groupId)
-			.eq('date', selectedDate)
-		const map: AttendanceMap = {}
+			.eq('date', date)
+
+		const map: AttMap = {}
 		;(attData || []).forEach(a => {
 			map[a.student_id] = a.status
 		})
 		;(stData || []).forEach(s => {
 			if (!map[s.id]) map[s.id] = 'present'
 		})
-		setAttendance(map)
-		setLoading(false)
+		setAtt(map)
+		setSLoading(false)
 	}
 
-	const setAll = (status: AttendanceStatus) => {
-		const map: AttendanceMap = {}
+	const setAll = (status: AttStatus) => {
+		const m: AttMap = {}
 		students.forEach(s => {
-			map[s.id] = status
+			m[s.id] = status
 		})
-		setAttendance(map)
+		setAtt(m)
 	}
 
 	const handleSave = async () => {
-		if (!selectedGroup) return
+		if (!selGroup) return
 		setSaving(true)
 		const rows = students.map(s => ({
-			group_id: selectedGroup,
+			group_id: selGroup.id,
 			student_id: s.id,
-			date: selectedDate,
-			status: attendance[s.id] || 'present',
+			date,
+			status: att[s.id] || 'present',
 		}))
 		const { error } = await supabase
 			.from('attendance')
 			.upsert(rows, { onConflict: 'group_id,student_id,date' })
 		setSaving(false)
-		if (error) showToast('Saqlashda xato: ' + error.message, 'error')
-		else showToast('Davomat saqlandi!', 'success')
+		if (error) msg('Saqlashda xato: ' + error.message, false)
+		else msg('Davomat saqlandi!')
 	}
 
 	const counts = {
-		present: students.filter(s => attendance[s.id] === 'present').length,
-		late: students.filter(s => attendance[s.id] === 'late').length,
-		absent: students.filter(s => attendance[s.id] === 'absent').length,
+		present: students.filter(s => att[s.id] === 'present').length,
+		late: students.filter(s => att[s.id] === 'late').length,
+		absent: students.filter(s => att[s.id] === 'absent').length,
 	}
 
-	const inputCls =
-		'h-10 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors'
-
 	return (
-		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-6 space-y-6 transition-colors duration-300'>
+		<div className='min-h-screen bg-slate-50 dark:bg-slate-950 p-6 space-y-5 transition-colors'>
 			{toast && (
 				<div
-					className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}
+					className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.ok ? 'bg-emerald-600' : 'bg-red-600'}`}
 				>
-					{toast.type === 'success' ? (
+					{toast.ok ? (
 						<CheckCircle2 className='w-4 h-4' />
 					) : (
 						<AlertCircle className='w-4 h-4' />
@@ -192,64 +217,102 @@ export default function AttendancePage() {
 				</p>
 			</div>
 
+			{/* Mentor ID topilmasa xabar */}
+			{!gLoading && mentorId === null && (
+				<div className='bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 rounded-2xl p-4 flex items-start gap-3'>
+					<AlertCircle className='w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5' />
+					<div>
+						<p className='text-sm font-bold text-amber-800 dark:text-amber-300'>
+							Mentor hisobi topilmadi
+						</p>
+						<p className='text-xs text-amber-600 dark:text-amber-400 mt-0.5'>
+							Tizimga kirgan email mentors jadvalidagi email bilan mos
+							kelmayapti yoki
+							<code className='mx-1 px-1 bg-amber-100 dark:bg-amber-500/20 rounded'>
+								NEXT_PUBLIC_MENTOR_ID
+							</code>
+							env variable o'rnatilmagan.
+						</p>
+					</div>
+				</div>
+			)}
+
 			{/* Controls */}
 			<div className='flex flex-wrap gap-3 items-end'>
-				<div className='flex-1 min-w-[200px]'>
-					<label className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5'>
+				<div className='flex-1 min-w-[220px]'>
+					<label className='block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5'>
 						Guruh
 					</label>
-					<select
-						value={selectedGroup}
-						onChange={e => setSelectedGroup(e.target.value)}
-						className={`w-full ${inputCls}`}
-					>
-						<option value=''>Guruhni tanlang...</option>
-						{groups.map(g => (
-							<option key={g.id} value={g.id}>
-								{g.name}
-							</option>
-						))}
-					</select>
+					{gLoading ? (
+						<div className='h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl flex items-center px-3 gap-2'>
+							<Loader2 className='w-4 h-4 animate-spin text-blue-500' />
+							<span className='text-sm text-slate-400'>Yuklanmoqda...</span>
+						</div>
+					) : (
+						<select
+							value={selGroup?.id || ''}
+							onChange={e => {
+								const g =
+									groups.find(g => g.id === parseInt(e.target.value)) || null
+								setSelGroup(g)
+								setStudents([])
+								setAtt({})
+							}}
+							className='w-full h-10 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors'
+						>
+							<option value=''>— Guruhni tanlang —</option>
+							{groups.map(g => (
+								<option key={g.id} value={g.id}>
+									{g.name}
+									{g.schedule_days ? ` · ${g.schedule_days}` : ''}
+									{g.class_time ? ` ${g.class_time}` : ''}
+								</option>
+							))}
+						</select>
+					)}
 				</div>
 				<div>
-					<label className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5'>
+					<label className='block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5'>
 						Sana
 					</label>
 					<input
 						type='date'
-						value={selectedDate}
-						onChange={e => setSelectedDate(e.target.value)}
-						className={inputCls}
+						value={date}
+						onChange={e => setDate(e.target.value)}
+						className='h-10 px-3 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-blue-500 transition-colors'
 					/>
 				</div>
 			</div>
 
 			{/* Stats + setAll */}
-			{selectedGroup && !loading && students.length > 0 && (
-				<div className='flex gap-3 flex-wrap items-center'>
-					{(['present', 'late', 'absent'] as AttendanceStatus[]).map(st => {
-						const cfg = statusConfig[st]
+			{selGroup && !sLoading && students.length > 0 && (
+				<div className='flex flex-wrap gap-2 items-center'>
+					{(['present', 'late', 'absent'] as AttStatus[]).map(st => {
+						const cfg = STATUS[st]
 						const Icon = cfg.icon
 						return (
 							<div
 								key={st}
-								className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold ${cfg.activeCls}`}
+								className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold ${cfg.on}`}
 							>
-								<Icon className='w-4 h-4' />
+								<Icon className='w-3.5 h-3.5' />
 								{cfg.label}: {counts[st]}
 							</div>
 						)
 					})}
-					<div className='flex gap-2 ml-auto'>
-						{(['present', 'late', 'absent'] as AttendanceStatus[]).map(st => {
-							const cfg = statusConfig[st]
+					<div className='flex gap-2 ml-auto flex-wrap'>
+						<span className='text-[11px] text-slate-400 self-center'>
+							Barchasi:
+						</span>
+						{(['present', 'late', 'absent'] as AttStatus[]).map(st => {
+							const cfg = STATUS[st]
 							return (
 								<button
 									key={st}
 									onClick={() => setAll(st)}
-									className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${cfg.cls}`}
+									className={`px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${cfg.off}`}
 								>
-									Barchasi: {cfg.label}
+									{cfg.label}
 								</button>
 							)
 						})}
@@ -258,21 +321,25 @@ export default function AttendancePage() {
 			)}
 
 			{/* Body */}
-			{!selectedGroup ? (
-				<div className='text-center py-20 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl'>
-					<Users className='w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3' />
-					<p className='text-slate-400 dark:text-slate-500'>Guruhni tanlang</p>
+			{!selGroup ? (
+				<div className='flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl gap-3'>
+					<Users className='w-14 h-14 text-slate-300 dark:text-slate-700' />
+					<p className='text-slate-400 dark:text-slate-500 font-medium'>
+						{groups.length === 0 && !gLoading
+							? 'Sizga biriktirilgan guruh topilmadi'
+							: 'Yuqoridan guruhni tanlang'}
+					</p>
 				</div>
-			) : loading ? (
-				<div className='flex items-center justify-center py-20 gap-3 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl'>
+			) : sLoading ? (
+				<div className='flex items-center justify-center py-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl gap-3'>
 					<Loader2 className='w-5 h-5 animate-spin text-blue-500' />
 					<span className='text-slate-500 dark:text-slate-400'>
 						Yuklanmoqda...
 					</span>
 				</div>
 			) : students.length === 0 ? (
-				<div className='text-center py-20 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl'>
-					<Users className='w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3' />
+				<div className='flex flex-col items-center justify-center py-24 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl gap-3'>
+					<Users className='w-14 h-14 text-slate-300 dark:text-slate-700' />
 					<p className='text-slate-400 dark:text-slate-500'>
 						Bu guruhda talaba yo'q
 					</p>
@@ -283,21 +350,22 @@ export default function AttendancePage() {
 						<table className='w-full text-sm'>
 							<thead>
 								<tr className='border-b border-slate-100 dark:border-white/5'>
-									{['#', 'Talaba', 'Holat'].map(h => (
-										<th
-											key={h}
-											className='text-left text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-5 py-3'
-										>
-											{h}
-										</th>
-									))}
+									<th className='text-left text-[10px] font-black text-slate-400 uppercase tracking-widest px-5 py-3 w-10'>
+										#
+									</th>
+									<th className='text-left text-[10px] font-black text-slate-400 uppercase tracking-widest px-5 py-3'>
+										Talaba
+									</th>
+									<th className='text-left text-[10px] font-black text-slate-400 uppercase tracking-widest px-5 py-3'>
+										Holat
+									</th>
 								</tr>
 							</thead>
 							<tbody className='divide-y divide-slate-100 dark:divide-white/5'>
 								{students.map((s, idx) => {
-									const cur = attendance[s.id] || 'present'
+									const cur = att[s.id] || 'present'
 									const full = `${s.last_name} ${s.first_name}`.trim()
-									const initials =
+									const ini =
 										`${s.last_name?.[0] || ''}${s.first_name?.[0] || ''}`.toUpperCase()
 									return (
 										<tr
@@ -310,10 +378,10 @@ export default function AttendancePage() {
 											<td className='px-5 py-3'>
 												<div className='flex items-center gap-3'>
 													<div
-														className={`w-8 h-8 rounded-xl bg-gradient-to-br ${avatarColors[idx % avatarColors.length]} flex items-center justify-center shrink-0`}
+														className={`w-8 h-8 rounded-xl bg-gradient-to-br ${COLORS[idx % COLORS.length]} flex items-center justify-center shrink-0`}
 													>
 														<span className='text-white text-[10px] font-black'>
-															{initials}
+															{ini}
 														</span>
 													</div>
 													<div>
@@ -321,7 +389,7 @@ export default function AttendancePage() {
 															{full}
 														</p>
 														{s.phone && (
-															<p className='text-[10px] text-slate-400 dark:text-slate-500'>
+															<p className='text-[10px] text-slate-400'>
 																{s.phone}
 															</p>
 														)}
@@ -329,26 +397,25 @@ export default function AttendancePage() {
 												</div>
 											</td>
 											<td className='px-5 py-3'>
-												<div className='flex gap-2'>
-													{(
-														['present', 'late', 'absent'] as AttendanceStatus[]
-													).map(st => {
-														const cfg = statusConfig[st]
-														const Icon = cfg.icon
-														const isActive = cur === st
-														return (
-															<button
-																key={st}
-																onClick={() =>
-																	setAttendance(p => ({ ...p, [s.id]: st }))
-																}
-																className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${isActive ? cfg.activeCls : cfg.cls}`}
-															>
-																<Icon className='w-3 h-3' />
-																{cfg.label}
-															</button>
-														)
-													})}
+												<div className='flex gap-2 flex-wrap'>
+													{(['present', 'late', 'absent'] as AttStatus[]).map(
+														st => {
+															const cfg = STATUS[st]
+															const Icon = cfg.icon
+															return (
+																<button
+																	key={st}
+																	onClick={() =>
+																		setAtt(p => ({ ...p, [s.id]: st }))
+																	}
+																	className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all ${cur === st ? cfg.on : cfg.off}`}
+																>
+																	<Icon className='w-3 h-3' />
+																	{cfg.label}
+																</button>
+															)
+														},
+													)}
 												</div>
 											</td>
 										</tr>

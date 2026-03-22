@@ -1,5 +1,6 @@
 'use client'
 
+import { createClient } from '@supabase/supabase-js'
 import {
 	AlertCircle,
 	ArrowRight,
@@ -11,6 +12,16 @@ import {
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 
+const supabase = createClient(
+	process.env.NEXT_PUBLIC_SUPABASE_URL!,
+	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+)
+
+// Admin hisoblar — o'zgaruvchi
+const ADMIN_ACCOUNTS = [
+	{ email: 'inoqdost478@gmail.com', password: 'itparkadmin' },
+]
+
 export default function LoginPage() {
 	const router = useRouter()
 	const [email, setEmail] = useState('')
@@ -20,51 +31,69 @@ export default function LoginPage() {
 	const [loading, setLoading] = useState(false)
 	const [focused, setFocused] = useState<string | null>(null)
 	const [mounted, setMounted] = useState(false)
-
 	const redirecting = useRef(false)
 
 	useEffect(() => {
 		setMounted(true)
 		if (redirecting.current) return
-
 		const isAdmin = localStorage.getItem('adminLoggedIn') === 'true'
 		const isTeacher = localStorage.getItem('teacherLoggedIn') === 'true'
-		const userRole = localStorage.getItem('userRole')
-
-		if (userRole === 'admin' && isAdmin) {
+		const role = localStorage.getItem('userRole')
+		if (role === 'admin' && isAdmin) {
 			redirecting.current = true
 			router.replace('/admin/dashboard')
-		} else if (userRole === 'teacher' && isTeacher) {
+		}
+		if (role === 'teacher' && isTeacher) {
 			redirecting.current = true
 			router.replace('/teacher-panel/dashboard')
 		}
 	}, [router])
 
-	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setError('')
 		setLoading(true)
 
-		await new Promise(r => setTimeout(r, 900))
-
-		if (redirecting.current) return
-
-		if (email === 'inoqdost478@gmail.com' && password === 'itparkadmin') {
+		// 1. Admin tekshirish
+		const isAdmin = ADMIN_ACCOUNTS.some(
+			a => a.email === email.trim() && a.password === password,
+		)
+		if (isAdmin) {
 			redirecting.current = true
 			localStorage.setItem('adminLoggedIn', 'true')
 			localStorage.setItem('userRole', 'admin')
 			localStorage.removeItem('teacherLoggedIn')
 			router.replace('/admin/dashboard')
-		} else if (email === 'a1ibekdew0@gmail.com' && password === 'itparkadmin') {
-			redirecting.current = true
-			localStorage.setItem('teacherLoggedIn', 'true') // To'g'ri kalit
-			localStorage.setItem('userRole', 'teacher')
-			localStorage.removeItem('adminLoggedIn')
-			router.replace('/teacher-panel/dashboard') // To'liq path
-		} else {
+			return
+		}
+
+		// 2. Mentor/Teacher tekshirish — mentors jadvalidan
+		const { data: mentor, error: dbErr } = await supabase
+			.from('mentors')
+			.select('id, full_name, email, password')
+			.eq('email', email.trim())
+			.single()
+
+		if (dbErr || !mentor) {
 			setError("Email yoki parol noto'g'ri.")
 			setLoading(false)
+			return
 		}
+
+		if (mentor.password !== password) {
+			setError("Email yoki parol noto'g'ri.")
+			setLoading(false)
+			return
+		}
+
+		// ✅ Teacher login muvaffaqiyatli
+		redirecting.current = true
+		localStorage.setItem('teacherLoggedIn', 'true')
+		localStorage.setItem('userRole', 'teacher')
+		localStorage.setItem('teacherMentorId', String(mentor.id)) // ← ID saqlaydi
+		localStorage.setItem('teacherName', mentor.full_name || '')
+		localStorage.removeItem('adminLoggedIn')
+		router.replace('/teacher-panel/dashboard')
 	}
 
 	if (!mounted) return null
@@ -74,7 +103,7 @@ export default function LoginPage() {
 			<style>{`
         @keyframes up {
           from { opacity:0; transform:translateY(24px) scale(.97); }
-          to   { opacity:1; transform:translateY(0)   scale(1);   }
+          to   { opacity:1; transform:translateY(0) scale(1); }
         }
         @keyframes shake {
           0%,100%{ transform:translateX(0); }
@@ -83,16 +112,15 @@ export default function LoginPage() {
           60%{ transform:translateX(-4px); }
           80%{ transform:translateX(4px); }
         }
-        .card-in  { animation: up .45s cubic-bezier(.16,1,.3,1) forwards; }
-        .err-shake{ animation: shake .4s ease; }
+        .card-in   { animation: up .45s cubic-bezier(.16,1,.3,1) forwards; }
+        .err-shake { animation: shake .4s ease; }
       `}</style>
 
 			<div className='relative min-h-screen flex items-center justify-center px-4 py-12 bg-white dark:bg-[#070b16] transition-colors duration-300 overflow-hidden'>
-				{/* Mesh gradient bg */}
+				{/* Background */}
 				<div className='absolute inset-0 pointer-events-none'>
 					<div className='absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-blue-200/40 dark:bg-blue-600/15 blur-[120px]' />
 					<div className='absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-cyan-200/30 dark:bg-cyan-500/10 blur-[100px]' />
-					<div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] rounded-full bg-indigo-100/30 dark:bg-indigo-600/8 blur-[80px]' />
 					<div
 						className='absolute inset-0 opacity-[0.035] dark:opacity-[0.06]'
 						style={{
@@ -103,14 +131,13 @@ export default function LoginPage() {
 					/>
 				</div>
 
-				{/* Card */}
 				<div className='card-in relative w-full max-w-[420px]'>
 					<div className='absolute -inset-px rounded-[28px] bg-gradient-to-br from-blue-400/30 via-transparent to-cyan-400/20 dark:from-blue-500/20 dark:to-cyan-500/15 blur-[2px]' />
-
-					<div className='relative bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl rounded-[26px] shadow-2xl shadow-blue-900/8 dark:shadow-black/50 border border-white/80 dark:border-slate-700/50 overflow-hidden'>
-						<div className='h-[3px] bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600 bg-[length:200%_100%]' />
+					<div className='relative bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl rounded-[26px] shadow-2xl border border-white/80 dark:border-slate-700/50 overflow-hidden'>
+						<div className='h-[3px] bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600' />
 
 						<div className='px-8 pt-8 pb-7'>
+							{/* Logo */}
 							<div className='flex flex-col items-center mb-8'>
 								<div className='relative mb-4'>
 									<div className='absolute inset-0 bg-blue-500/25 rounded-2xl blur-xl scale-110' />
@@ -140,15 +167,16 @@ export default function LoginPage() {
 							)}
 
 							<form onSubmit={handleSubmit} className='space-y-3.5'>
+								{/* Email */}
 								<div>
 									<label className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em] mb-2'>
 										Email manzil
 									</label>
 									<div
-										className={`group relative rounded-xl border transition-all duration-200 ${focused === 'email' ? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800' : error ? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50' : 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'}`}
+										className={`relative rounded-xl border transition-all duration-200 ${focused === 'email' ? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800' : error ? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50' : 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'}`}
 									>
 										<svg
-											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 pointer-events-none ${focused === 'email' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
+											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${focused === 'email' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
 											fill='none'
 											stroke='currentColor'
 											viewBox='0 0 24 24'
@@ -170,13 +198,14 @@ export default function LoginPage() {
 											}}
 											onFocus={() => setFocused('email')}
 											onBlur={() => setFocused(null)}
-											placeholder='admin@example.com'
+											placeholder='email@example.com'
 											disabled={loading}
 											className='w-full h-11 pl-10 pr-4 text-sm bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none disabled:opacity-50 rounded-xl'
 										/>
 									</div>
 								</div>
 
+								{/* Parol */}
 								<div>
 									<label className='block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.12em] mb-2'>
 										Parol
@@ -185,7 +214,7 @@ export default function LoginPage() {
 										className={`relative rounded-xl border transition-all duration-200 ${focused === 'password' ? 'border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800' : error ? 'border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50' : 'border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600'}`}
 									>
 										<svg
-											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200 pointer-events-none ${focused === 'password' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
+											className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${focused === 'password' ? 'text-blue-500' : 'text-slate-400 dark:text-slate-500'}`}
 											fill='none'
 											stroke='currentColor'
 											viewBox='0 0 24 24'
@@ -214,7 +243,7 @@ export default function LoginPage() {
 										<button
 											type='button'
 											onClick={() => setShowPassword(v => !v)}
-											className='absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors duration-150 p-0.5'
+											className='absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-0.5'
 										>
 											{showPassword ? (
 												<EyeOff className='w-4 h-4' />
@@ -231,7 +260,7 @@ export default function LoginPage() {
 										disabled={loading || !email || !password}
 										className='group relative w-full h-11 rounded-xl font-black text-sm transition-all duration-200 overflow-hidden disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 enabled:bg-gradient-to-r enabled:from-blue-600 enabled:to-blue-500 enabled:hover:from-blue-500 enabled:hover:to-cyan-500 enabled:text-white enabled:shadow-lg enabled:shadow-blue-500/30 flex items-center justify-center gap-2'
 									>
-										<div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-in-out' />
+										<div className='absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700' />
 										{loading ? (
 											<>
 												<svg
@@ -258,7 +287,7 @@ export default function LoginPage() {
 										) : (
 											<>
 												<span>Kirish</span>
-												<ArrowRight className='w-4 h-4 group-hover:translate-x-1 transition-transform duration-200' />
+												<ArrowRight className='w-4 h-4 group-hover:translate-x-1 transition-transform' />
 											</>
 										)}
 									</button>
@@ -277,7 +306,7 @@ export default function LoginPage() {
 							</div>
 						</div>
 					</div>
-					<p className='text-center text-[11px] text-slate-400 dark:text-slate-600 mt-5 tracking-wide'>
+					<p className='text-center text-[11px] text-slate-400 dark:text-slate-600 mt-5'>
 						© 2025 IT-Park & Al-Khorazmiy · Shovot, Xorazm
 					</p>
 				</div>
