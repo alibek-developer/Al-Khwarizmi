@@ -8,6 +8,7 @@ import {
 	Download,
 	Edit2,
 	Eye,
+	EyeOff,
 	FileSpreadsheet,
 	FileText,
 	Loader2,
@@ -39,6 +40,8 @@ type StudentRow = {
 	payment_amount: number
 	status: string
 	created_at: string
+	email?: string
+	password?: string
 }
 
 type Student = {
@@ -60,6 +63,8 @@ type Student = {
 	paid: string
 	avatar: string
 	color: string
+	email?: string
+	password?: string
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────
@@ -99,6 +104,37 @@ const inputCls =
 const labelCls =
 	'block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5'
 
+function PasswordInput({
+	value,
+	onChange,
+	placeholder = '••••••••',
+}: {
+	value: string
+	onChange: (v: string) => void
+	placeholder?: string
+}) {
+	const [show, setShow] = useState(false)
+	return (
+		<div className='relative'>
+			<input
+				type={show ? 'text' : 'password'}
+				className={inputCls + ' pr-10'}
+				placeholder={placeholder}
+				value={value}
+				onChange={e => onChange(e.target.value)}
+				autoComplete='new-password'
+			/>
+			<button
+				type='button'
+				onClick={() => setShow(v => !v)}
+				className='absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors'
+			>
+				{show ? <EyeOff className='w-4 h-4' /> : <Eye className='w-4 h-4' />}
+			</button>
+		</div>
+	)
+}
+
 // ─── Helpers ───────────────────────────────────────────────────────────────
 function rowToStudent(row: StudentRow, idx: number): Student {
 	const full_name = [row.first_name, row.last_name].filter(Boolean).join(' ')
@@ -131,6 +167,8 @@ function rowToStudent(row: StudentRow, idx: number): Student {
 				.slice(0, 2)
 				.toUpperCase() || '??',
 		color: colors[idx % colors.length],
+		email: row.email || '',
+		password: row.password || '',
 	}
 }
 
@@ -433,6 +471,8 @@ type FormState = {
 	certificate_id: string
 	pinfl: string
 	course: string
+	email: string
+	password: string
 }
 
 const emptyForm: FormState = {
@@ -445,6 +485,8 @@ const emptyForm: FormState = {
 	certificate_id: '',
 	pinfl: '',
 	course: '',
+	email: '',
+	password: '',
 }
 
 function StudentForm({
@@ -563,6 +605,36 @@ function StudentForm({
 					/>
 				</div>
 			</div>
+
+			<div className='bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 space-y-3'>
+				<p className='text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2'>
+					<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[7px]'>🔑</span>
+					Student Panel Login Ma&apos;lumotlari
+				</p>
+				<div className='grid grid-cols-2 gap-3'>
+					<div>
+						<label className={labelCls}>Email</label>
+						<input
+							className={inputCls}
+							type='email'
+							placeholder='student@email.com'
+							value={form.email}
+							onChange={set('email')}
+							autoComplete='off'
+						/>
+					</div>
+					<div>
+						<label className={labelCls}>Parol *</label>
+						<PasswordInput
+							value={form.password}
+							onChange={v => onChange({ ...form, password: v })}
+						/>
+					</div>
+				</div>
+				<p className='text-[10px] text-emerald-600 dark:text-emerald-400'>
+					Bu email va parol orqali talaba student paneliga kiradi
+				</p>
+			</div>
 		</div>
 	)
 }
@@ -673,7 +745,7 @@ export default function StudentsPage() {
 	}, [])
 
 	const handleAdd = async () => {
-		if (!form.first_name || !form.last_name) return
+		if (!form.first_name || !form.last_name || !form.password) return
 		setSaving(true)
 		const { error } = await supabase.from('students').insert([
 			{
@@ -688,6 +760,8 @@ export default function StudentsPage() {
 				course_id: COURSE_ID_MAP[form.course] ?? null,
 				payment_amount: 0,
 				status: 'active',
+				email: form.email || null,
+				password: form.password,
 			},
 		])
 		setSaving(false)
@@ -704,20 +778,25 @@ export default function StudentsPage() {
 	const handleEdit = async () => {
 		if (!editItem) return
 		setSaving(true)
+		const updateData: Record<string, unknown> = {
+			first_name: editItem.first_name,
+			last_name: editItem.last_name,
+			father_name: editItem.father_name,
+			birth_date: editItem.birth_date || null,
+			phone: editItem.phone,
+			parent_phone: editItem.parent_phone,
+			certificate_id: editItem.certificate_id,
+			pinfl: editItem.pinfl,
+			course_id: COURSE_ID_MAP[editItem.course] ?? editItem.course_id ?? null,
+			status: editItem.status,
+			email: editItem.email || null,
+		}
+		if (editItem.password && editItem.password.trim()) {
+			updateData.password = editItem.password
+		}
 		const { error } = await supabase
 			.from('students')
-			.update({
-				first_name: editItem.first_name,
-				last_name: editItem.last_name,
-				father_name: editItem.father_name,
-				birth_date: editItem.birth_date || null,
-				phone: editItem.phone,
-				parent_phone: editItem.parent_phone,
-				certificate_id: editItem.certificate_id,
-				pinfl: editItem.pinfl,
-				course_id: COURSE_ID_MAP[editItem.course] ?? editItem.course_id ?? null,
-				status: editItem.status,
-			})
+			.update(updateData)
 			.eq('id', editItem.id)
 		setSaving(false)
 		if (error) {
@@ -788,7 +867,7 @@ export default function StudentsPage() {
 						</button>
 						<button
 							onClick={handleAdd}
-							disabled={saving || !form.first_name || !form.last_name}
+							disabled={saving || !form.first_name || !form.last_name || !form.password}
 							className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
 						>
 							{saving ? (
@@ -946,6 +1025,37 @@ export default function StudentsPage() {
 								/>
 							</div>
 						</div>
+						<div className='bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 space-y-3'>
+							<p className='text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2'>
+								<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[7px]'>🔑</span>
+								Student Panel Login Ma&apos;lumotlari
+							</p>
+							<div className='grid grid-cols-2 gap-3'>
+								<div>
+									<label className={labelCls}>Email</label>
+									<input
+										className={inputCls}
+										type='email'
+										value={editItem.email || ''}
+										onChange={e =>
+											setEditItem(p =>
+												p ? { ...p, email: e.target.value } : null,
+											)
+										}
+									/>
+								</div>
+								<div>
+									<label className={labelCls}>Yangi parol (ixtiyoriy)</label>
+									<PasswordInput
+										value={editItem.password || ''}
+										onChange={v =>
+											setEditItem(p => (p ? { ...p, password: v } : null))
+										}
+										placeholder="O'zgartirmaslik uchun bo'sh qoldiring"
+									/>
+								</div>
+							</div>
+						</div>
 						<div>
 							<label className={labelCls}>Holat</label>
 							<select
@@ -1034,6 +1144,26 @@ export default function StudentsPage() {
 							</div>
 						))}
 					</div>
+
+					{viewItem.email && (
+						<div className='mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl px-4 py-3'>
+							<p className='text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest mb-2'>
+								🔑 Login Ma&apos;lumotlari
+							</p>
+							<div className='flex justify-between text-xs'>
+								<span className='text-slate-500'>Email</span>
+								<span className='font-bold text-slate-900 dark:text-white'>
+									{viewItem.email}
+								</span>
+							</div>
+							<div className='flex justify-between text-xs mt-1'>
+								<span className='text-slate-500'>Parol</span>
+								<span className='font-bold text-slate-900 dark:text-white'>
+									{'•'.repeat(Math.min(viewItem.password?.length || 0, 10))}
+								</span>
+							</div>
+						</div>
+					)}
 				</Modal>
 			)}
 
