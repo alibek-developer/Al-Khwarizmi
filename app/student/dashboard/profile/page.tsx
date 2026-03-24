@@ -16,20 +16,24 @@ import {
   Shield,
   User,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { studentApi } from "@/lib/api";
 
 const iCls = "w-full h-11 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors";
 const lCls = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5";
 
 export default function StudentProfilePage() {
   const [student, setStudent] = useState({
-    firstName: "Jasur",
-    lastName: "Abdullayev",
-    email: "jasur@example.com",
-    phone: "+998901234567",
-    group: "Web Development - A",
+    id: 0,
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    group: "",
     avatarUrl: "",
+    total_points: 0,
   });
 
   const [passwords, setPasswords] = useState({
@@ -40,21 +44,44 @@ export default function StudentProfilePage() {
   const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const name = localStorage.getItem("studentName");
-    const email = localStorage.getItem("studentEmail");
-    const avatar = localStorage.getItem("studentAvatar");
-    if (name) {
-      const parts = name.split(" ");
-      setStudent(p => ({
-        ...p,
-        firstName: parts[0] || "",
-        lastName: parts.slice(1).join(" ") || "",
-        email: email || "",
-        avatarUrl: avatar || "",
-      }));
-    }
+    const fetchStudent = async () => {
+      try {
+        const studentId = localStorage.getItem("studentId");
+        if (!studentId) return;
+        
+        const data = await studentApi.getById(Number(studentId));
+        setStudent({
+          id: data.id,
+          firstName: data.first_name || "",
+          lastName: data.last_name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          group: data.father_name || "",
+          avatarUrl: data.avatar || "",
+          total_points: data.total_points || 0,
+        });
+      } catch (error) {
+        console.error("Failed to fetch student:", error);
+        const name = localStorage.getItem("studentName");
+        const email = localStorage.getItem("studentEmail");
+        if (name) {
+          const parts = name.split(" ");
+          setStudent(p => ({
+            ...p,
+            firstName: parts[0] || "",
+            lastName: parts.slice(1).join(" ") || "",
+            email: email || "",
+          }));
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudent();
   }, []);
 
   const msg = (m: string, ok = true) => {
@@ -63,13 +90,22 @@ export default function StudentProfilePage() {
   };
 
   const handleSaveProfile = async () => {
+    if (!student.id) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 1000));
-    localStorage.setItem("studentName", `${student.firstName} ${student.lastName}`);
-    localStorage.setItem("studentEmail", student.email);
-    if (student.avatarUrl) localStorage.setItem("studentAvatar", student.avatarUrl);
-    setSaving(false);
-    msg("Profil muvaffaqiyatli saqlandi!");
+    try {
+      await studentApi.update(student.id, {
+        first_name: student.firstName,
+        last_name: student.lastName,
+        phone: student.phone,
+        avatar: student.avatarUrl,
+      });
+      localStorage.setItem("studentName", `${student.firstName} ${student.lastName}`);
+      msg("Profil muvaffaqiyatli saqlandi!");
+    } catch (error) {
+      msg("Xatolik yuz berdi", false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async () => {
@@ -85,23 +121,37 @@ export default function StudentProfilePage() {
       msg("Yangi parollar mos kelmadi", false);
       return;
     }
+    if (!student.id) return;
     setSaving(true);
-    await new Promise(r => setTimeout(r, 1000));
-    setSaving(false);
-    msg("Parol muvaffaqiyatli o'zgartirildi!");
-    setPasswords({ current: "", new: "", confirm: "" });
+    try {
+      await studentApi.updatePassword(student.id, passwords.new);
+      msg("Parol muvaffaqiyatli o'zgartirildi!");
+      setPasswords({ current: "", new: "", confirm: "" });
+    } catch (error) {
+      msg("Xatolik yuz berdi", false);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const stats = [
-    { label: "XP Ballar", value: "1850", icon: Zap, color: "amber" },
-    { label: "Kurslar", value: "3", icon: BookOpen, color: "violet" },
-    { label: "Sertifikatlar", value: "2", icon: Award, color: "violet" },
-    { label: "Guruh", value: "A", icon: GraduationCap, color: "blue" },
+    { label: "XP Ballar", value: student.total_points.toString(), icon: Zap, color: "amber" },
+    { label: "Kurslar", value: "0", icon: BookOpen, color: "violet" },
+    { label: "Sertifikatlar", value: "0", icon: Award, color: "violet" },
+    { label: "Guruh", value: student.group || "A", icon: GraduationCap, color: "blue" },
   ];
 
   const getInitials = () => {
     return (student.firstName[0] || "") + (student.lastName[0] || "");
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 pb-6">
@@ -339,7 +389,7 @@ export default function StudentProfilePage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500 dark:text-slate-400">Guruh</span>
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{student.group}</span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{student.group || "A"}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500 dark:text-slate-400">Ro&apos;yxatdan o&apos;tgan</span>

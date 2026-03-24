@@ -1,0 +1,7 @@
+export { supabase } from './supabase'
+export { studentApi, type Student } from './student'
+export { courseApi, type Course, type Group, type Material } from './course'
+export { homeworkApi, type Homework, type HomeworkSubmission } from './homework'
+export { gameApi, type GameResult } from './game'
+export { certificateApi, type Certificate } from './certificate'
+export { dashboardApi, type DashboardStats } from './dashboard'

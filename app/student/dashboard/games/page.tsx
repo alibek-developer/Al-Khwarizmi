@@ -13,8 +13,10 @@ import {
   Star,
   Trophy,
   Zap,
+  Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { gameApi } from "@/lib/api";
 
 const mockDailyQuiz = {
   id: 1,
@@ -106,6 +108,34 @@ export default function StudentGamesPage() {
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
   const [score, setScore] = useState(0);
+  const [totalXP, setTotalXP] = useState(0);
+  const [gameStats, setGameStats] = useState<Record<string, { count: number; totalPoints: number }>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGameStats = async () => {
+      try {
+        const studentId = localStorage.getItem("studentId");
+        if (!studentId) return;
+        
+        const [stats, results] = await Promise.all([
+          gameApi.getStats(Number(studentId)),
+          gameApi.getByStudentId(Number(studentId)),
+        ]);
+        
+        setGameStats(stats);
+        
+        const totalPoints = results.reduce((sum, r) => sum + r.points_earned, 0);
+        setTotalXP(totalPoints);
+      } catch (error) {
+        console.error("Failed to fetch game stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGameStats();
+  }, []);
 
   const questions = [
     {
@@ -163,6 +193,16 @@ export default function StudentGamesPage() {
 
   const finalScore = Math.round((score / questions.length) * 100);
 
+  const totalGamesPlayed = Object.values(gameStats).reduce((sum, s) => sum + s.count, 0);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 pb-6">
       <div className="flex items-center justify-between">
@@ -178,13 +218,13 @@ export default function StudentGamesPage() {
           <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 rounded-xl px-3.5 py-2">
             <Flame className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             <span className="text-xs font-bold text-amber-700 dark:text-amber-400">
-              7 kun streak
+              0 kun streak
             </span>
           </div>
           <div className="flex items-center gap-2 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 rounded-xl px-3.5 py-2">
             <Zap className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             <span className="text-xs font-bold text-violet-700 dark:text-violet-400">
-              1850 XP
+              {totalXP} XP
             </span>
           </div>
         </div>
@@ -240,6 +280,7 @@ export default function StudentGamesPage() {
               {mockGames.map((game) => {
                 const Icon = game.icon;
                 const colors = colorMap[game.color];
+                const gameStat = gameStats[game.name];
                 return (
                   <div
                     key={game.id}
@@ -276,7 +317,7 @@ export default function StudentGamesPage() {
                       </div>
                       {game.unlocked ? (
                         <span className="text-[11px] text-slate-400 dark:text-slate-500">
-                          {game.plays} marta o&apos;ynalgan
+                          {gameStat?.count || 0} marta o&apos;ynalgan
                         </span>
                       ) : (
                         <span className="text-[10px] text-red-500 font-semibold">
@@ -301,33 +342,33 @@ export default function StudentGamesPage() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-slate-500 dark:text-slate-400">XP yig&apos;ish</span>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    1850/2500
+                    {totalXP}/2500
                   </span>
                 </div>
                 <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" style={{ width: "74%" }} />
+                  <div className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full" style={{ width: `${Math.min((totalXP / 2500) * 100, 100)}%` }} />
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-slate-500 dark:text-slate-400">Testlar</span>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    5/7
+                    {totalGamesPlayed}/7
                   </span>
                 </div>
                 <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: "71%" }} />
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: `${Math.min((totalGamesPlayed / 7) * 100, 100)}%` }} />
                 </div>
               </div>
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-slate-500 dark:text-slate-400">O&apos;yinlar</span>
                   <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                    3/5
+                    {Object.keys(gameStats).length}/5
                   </span>
                 </div>
                 <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full" style={{ width: "60%" }} />
+                  <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full" style={{ width: `${Math.min((Object.keys(gameStats).length / 5) * 100, 100)}%` }} />
                 </div>
               </div>
             </div>
@@ -347,19 +388,21 @@ export default function StudentGamesPage() {
             </h3>
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-violet-600 dark:text-violet-400">124</p>
-                <p className="text-[10px] text-slate-400">Jami testlar</p>
+                <p className="text-xl font-black text-violet-600 dark:text-violet-400">{totalGamesPlayed}</p>
+                <p className="text-[10px] text-slate-400">Jami o&apos;yinlar</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-blue-600 dark:text-blue-400">87%</p>
-                <p className="text-[10px] text-slate-400">O&apos;rtacha o&apos;rtacha</p>
+                <p className="text-xl font-black text-blue-600 dark:text-blue-400">
+                  {totalGamesPlayed > 0 ? Math.round(totalXP / totalGamesPlayed) : 0}%
+                </p>
+                <p className="text-[10px] text-slate-400">O&apos;rtacha natija</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-amber-600 dark:text-amber-400">3250</p>
+                <p className="text-xl font-black text-amber-600 dark:text-amber-400">{totalXP}</p>
                 <p className="text-[10px] text-slate-400">Jami XP</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-blue-600 dark:text-blue-400">7</p>
+                <p className="text-xl font-black text-blue-600 dark:text-blue-400">0</p>
                 <p className="text-[10px] text-slate-400">Eng uzun streak</p>
               </div>
             </div>
@@ -502,7 +545,7 @@ export default function StudentGamesPage() {
                     <div className="mt-6 flex justify-end">
                       <button
                         onClick={nextQuestion}
-className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-colors"
+                        className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-colors"
                       >
                         {currentQuestion < questions.length - 1 ? "Keyingi savol" : "Yakunlash"}
                       </button>

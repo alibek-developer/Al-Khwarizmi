@@ -12,10 +12,31 @@ import {
   TrendingUp,
   Trophy,
   Zap,
+  Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { dashboardApi } from "@/lib/api";
 
-const mockLeaderboard = [
+type LeaderboardEntry = {
+  rank: number;
+  name: string;
+  xp: number;
+  avatar: string;
+  badge?: string;
+};
+
+type CourseProgressEntry = {
+  group: {
+    id: number;
+    name: string;
+    course: {
+      title_uz: string;
+      lessons_count: number;
+    };
+  };
+};
+
+const mockLeaderboard: LeaderboardEntry[] = [
   { rank: 1, name: "Abdullayev Jasur", xp: 2450, avatar: "AJ", badge: "gold" },
   { rank: 2, name: "Toshmatova Dilnoza", xp: 2280, avatar: "TD", badge: "silver" },
   { rank: 3, name: "Karimov Sherzod", xp: 2100, avatar: "KS", badge: "bronze" },
@@ -25,27 +46,23 @@ const mockLeaderboard = [
   { rank: 7, name: "Qodirova Nilufar", xp: 1580, avatar: "QN" },
 ];
 
-const mockStats = {
-  totalXP: 1850,
-  rank: 4,
-  coursesCompleted: 2,
-  coursesInProgress: 1,
-  homeworkDone: 12,
-  homeworkPending: 2,
-  streak: 7,
-  avgScore: 87,
-};
-
-const mockCourseProgress = [
-  { name: "Web Development", progress: 72, total: 24, completed: 17, color: "bg-violet-500" },
-  { name: "English Course", progress: 45, total: 20, completed: 9, color: "bg-blue-500" },
-  { name: "Data Science", progress: 20, total: 30, completed: 6, color: "bg-blue-500" },
-];
-
 export default function StudentDashboardPage() {
   const [greeting, setGreeting] = useState("");
   const [mounted, setMounted] = useState(false);
   const [studentName, setStudentName] = useState("Talaba");
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalXP: 0,
+    rank: 0,
+    coursesCompleted: 0,
+    coursesInProgress: 0,
+    homeworkDone: 0,
+    homeworkPending: 0,
+    streak: 0,
+    avgScore: 0,
+  });
+  const [courseProgress, setCourseProgress] = useState<any[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>(mockLeaderboard);
 
   useEffect(() => {
     setMounted(true);
@@ -58,13 +75,51 @@ export default function StudentDashboardPage() {
     else setGreeting("Xayrli kech");
   }, []);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const studentId = localStorage.getItem("studentId");
+        if (!studentId) return;
+
+        const [statsData, progressData, leaderboardData] = await Promise.all([
+          dashboardApi.getStats(Number(studentId)),
+          dashboardApi.getCourseProgress(Number(studentId)),
+          dashboardApi.getLeaderboard(10),
+        ]);
+
+        setStats(statsData);
+        setCourseProgress(progressData || []);
+        if (leaderboardData?.length) setLeaderboard(leaderboardData);
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const today = new Date().toLocaleDateString("uz-UZ", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
 
-  if (!mounted) return null;
+  const getBadge = (rank: number) => {
+    if (rank === 1) return "gold";
+    if (rank === 2) return "silver";
+    if (rank === 3) return "bronze";
+    return undefined;
+  };
+
+  if (!mounted || loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 pb-6">
@@ -80,7 +135,7 @@ export default function StudentDashboardPage() {
         <div className="hidden sm:flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3.5 py-2">
           <Flame className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           <span className="text-xs font-bold text-blue-700 dark:text-blue-400">
-            {mockStats.streak} kun ketma-ket
+            {stats.streak} kun ketma-ket
           </span>
         </div>
       </div>
@@ -96,7 +151,7 @@ export default function StudentDashboardPage() {
             </span>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-0.5">
-            {mockStats.totalXP}
+            {stats.totalXP}
           </div>
           <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             XP Ballari
@@ -109,11 +164,11 @@ export default function StudentDashboardPage() {
               <Trophy className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             </div>
             <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-              #{mockStats.rank}
+              #{stats.rank || "-"}
             </span>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-0.5">
-            {mockStats.rank}
+            {stats.rank || "-"}
           </div>
           <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             Reyting
@@ -127,7 +182,7 @@ export default function StudentDashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-0.5">
-            {mockStats.coursesCompleted}/{mockStats.coursesInProgress + mockStats.coursesCompleted}
+            {stats.coursesCompleted}/{stats.coursesInProgress + stats.coursesCompleted}
           </div>
           <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             Kurslar
@@ -141,7 +196,7 @@ export default function StudentDashboardPage() {
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-0.5">
-            {mockStats.avgScore}%
+            {stats.avgScore}%
           </div>
           <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">
             O&apos;rtacha baho
@@ -163,32 +218,38 @@ export default function StudentDashboardPage() {
             <BookOpen className="w-4 h-4 text-slate-400" />
           </div>
           <div className="space-y-4">
-            {mockCourseProgress.map((course) => (
-              <div key={course.name}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${course.color}`} />
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      {course.name}
-                    </span>
+            {courseProgress.length > 0 ? (
+              courseProgress.map((item) => (
+                <div key={item.group.id}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-violet-500" />
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        {item.group.course?.title_uz || item.group.name}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs font-black text-slate-900 dark:text-white">
+                        0/{item.group.course?.lessons_count || 0}
+                      </span>
+                      <span className="text-[10px] text-slate-400 ml-1">
+                        dars
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-black text-slate-900 dark:text-white">
-                      {course.completed}/{course.total}
-                    </span>
-                    <span className="text-[10px] text-slate-400 ml-1">
-                      dars
-                    </span>
+                  <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-violet-500 rounded-full transition-all duration-700"
+                      style={{ width: "0%" }}
+                    />
                   </div>
                 </div>
-                <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${course.color} rounded-full transition-all duration-700`}
-                    style={{ width: `${course.progress}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-slate-400 text-center py-4">
+                Hali kursga yozilmagansiz
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -200,7 +261,7 @@ export default function StudentDashboardPage() {
                 </span>
               </div>
               <p className="text-lg font-black text-blue-600 dark:text-blue-400">
-                {mockStats.homeworkDone}
+                {stats.homeworkDone}
               </p>
             </div>
             <div className="bg-amber-50 dark:bg-amber-500/10 rounded-xl p-3">
@@ -211,7 +272,7 @@ export default function StudentDashboardPage() {
                 </span>
               </div>
               <p className="text-lg font-black text-amber-600 dark:text-amber-400">
-                {mockStats.homeworkPending}
+                {stats.homeworkPending}
               </p>
             </div>
           </div>
@@ -232,7 +293,7 @@ export default function StudentDashboardPage() {
             </div>
           </div>
           <div className="space-y-2">
-            {mockLeaderboard.slice(0, 5).map((user) => (
+            {leaderboard.slice(0, 5).map((user) => (
               <div
                 key={user.rank}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
@@ -277,10 +338,12 @@ export default function StudentDashboardPage() {
             <BookOpen className="w-5 h-5 text-white/80" />
             <span className="text-xs font-semibold text-white/80">Kurs</span>
           </div>
-          <h4 className="text-lg font-black mb-1">Web Development</h4>
-          <p className="text-white/70 text-xs mb-4">72% tugallangan</p>
+          <h4 className="text-lg font-black mb-1">
+            {courseProgress[0]?.group.course?.title_uz || "Kurs nomi"}
+          </h4>
+          <p className="text-white/70 text-xs mb-4">0% tugallangan</p>
           <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
-            <div className="h-full bg-white rounded-full" style={{ width: "72%" }} />
+            <div className="h-full bg-white rounded-full" style={{ width: "0%" }} />
           </div>
         </div>
 
@@ -290,7 +353,7 @@ export default function StudentDashboardPage() {
           </div>
           <div>
             <p className="text-xl font-black text-slate-900 dark:text-white">
-              {mockStats.avgScore}%
+              {stats.avgScore}%
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               O&apos;rtacha o&apos;quv natijangiz
@@ -304,7 +367,7 @@ export default function StudentDashboardPage() {
           </div>
           <div>
             <p className="text-xl font-black text-slate-900 dark:text-white">
-              2
+              0
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Olgan sertifikatingiz

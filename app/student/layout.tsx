@@ -13,10 +13,12 @@ import {
   User,
   Sun,
   X,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
+import { supabase, studentApi } from "@/lib/api";
 
 const navItems = [
   {
@@ -64,7 +66,8 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dark, setDark] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [student, setStudent] = useState<{ full_name: string; email: string; avatar_url?: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [student, setStudent] = useState<{ id: number; full_name: string; email: string; avatar_url?: string } | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -82,16 +85,37 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
     setDark(isDark);
     document.documentElement.classList.toggle("dark", isDark);
 
-    const name = localStorage.getItem("studentName");
-    const email = localStorage.getItem("studentEmail");
-    const avatar = localStorage.getItem("studentAvatar");
-    if (name || email) {
-      setStudent({
-        full_name: name || "Talaba",
-        email: email || "",
-        avatar_url: avatar || undefined,
-      });
-    }
+    const fetchStudent = async () => {
+      try {
+        const studentId = localStorage.getItem("studentId");
+        if (studentId) {
+          const data = await studentApi.getById(Number(studentId));
+          const fullName = `${data.first_name} ${data.last_name}`;
+          setStudent({
+            id: data.id,
+            full_name: fullName,
+            email: data.email,
+            avatar_url: data.avatar || undefined,
+          });
+          localStorage.setItem("studentName", fullName);
+          localStorage.setItem("studentEmail", data.email);
+          if (data.avatar) localStorage.setItem("studentAvatar", data.avatar);
+        }
+      } catch (error) {
+        console.error("Failed to fetch student:", error);
+        const name = localStorage.getItem("studentName");
+        const email = localStorage.getItem("studentEmail");
+        setStudent({
+          id: 0,
+          full_name: name || "Talaba",
+          email: email || "",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudent();
   }, [router]);
 
   const toggleTheme = () => {

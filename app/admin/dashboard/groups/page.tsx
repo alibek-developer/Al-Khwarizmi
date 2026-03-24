@@ -479,7 +479,7 @@ function GroupForm({
 					<input
 						className={inputCls}
 						type='date'
-						value={form.start_date}
+						value={form.start_date || ''}
 						onChange={e => set({ start_date: e.target.value })}
 					/>
 				</div>
