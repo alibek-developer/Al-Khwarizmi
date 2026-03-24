@@ -56,7 +56,7 @@ const mockCertificates = [
 const courseColors: Record<string, { gradient: string; text: string }> = {
   wd: { gradient: "from-violet-500 to-purple-600", text: "text-violet-600 dark:text-violet-400" },
   en: { gradient: "from-blue-500 to-cyan-600", text: "text-blue-600 dark:text-blue-400" },
-  ds: { gradient: "from-emerald-500 to-teal-600", text: "text-emerald-600 dark:text-emerald-400" },
+  ds: { gradient: "from-blue-500 to-indigo-600", text: "text-blue-600 dark:text-blue-400" },
 };
 
 export default function StudentCertificatePage() {
@@ -91,7 +91,7 @@ export default function StudentCertificatePage() {
       </div>
 
       <div className="grid sm:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg">
           <div className="flex items-center gap-2 mb-2">
             <Award className="w-5 h-5 text-white/80" />
             <span className="text-sm font-semibold text-white/80">Faol sertifikatlar</span>
@@ -143,7 +143,7 @@ export default function StudentCertificatePage() {
                       <span className="font-bold text-amber-600 dark:text-amber-400">{cert.grade}%</span>
                     </div>
                     <div className="flex gap-2">
-                      <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+                      <button className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors">
                         <Eye className="w-3.5 h-3.5" /> Ko&apos;rish
                       </button>
                       <button className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
@@ -255,7 +255,7 @@ export default function StudentCertificatePage() {
                 </div>
               </div>
               <div className="flex gap-3 mt-5">
-                <button className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2">
+                <button className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2">
                   <Download className="w-4 h-4" /> PDF yuklab olish
                 </button>
                 <button onClick={() => setShowShare(true)} className="h-11 px-5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2">
@@ -319,7 +319,7 @@ export default function StudentCertificatePage() {
                   />
                   <button
                     onClick={() => navigator.clipboard.writeText(`https://al-khwarizmi.uz/certificates/${selectedCert.credentialId}`)}
-                    className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors"
+                    className="h-10 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors"
                   >
                     Nusxalash
                   </button>

@@ -54,7 +54,6 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    // 1️⃣ Admin tekshiruvi
     if (email.trim() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
       redirecting.current = true;
       localStorage.setItem("adminLoggedIn", "true");
@@ -65,7 +64,6 @@ export default function LoginPage() {
       return;
     }
 
-    // 2️⃣ Mentor/Teacher tekshiruvi
     const { data: mentor, error: mentorErr } = await supabase
       .from("mentors")
       .select("id, full_name, email, password, specialty_en, image_url")
@@ -87,7 +85,6 @@ export default function LoginPage() {
       return;
     }
 
-    // 3️⃣ Student tekshiruvi
     const { data: student, error: studentErr } = await supabase
       .from("students")
       .select("id, first_name, last_name, email, password")
@@ -133,8 +130,8 @@ export default function LoginPage() {
 
       <div className="relative min-h-screen flex items-center justify-center px-4 py-12 bg-white dark:bg-[#070b16] transition-colors duration-300 overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-emerald-200/30 dark:bg-emerald-600/10 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-teal-200/25 dark:bg-teal-500/10 blur-[100px]" />
+          <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] rounded-full bg-blue-200/40 dark:bg-blue-600/15 blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-cyan-200/30 dark:bg-cyan-500/10 blur-[100px]" />
           <div
             className="absolute inset-0 opacity-[0.035] dark:opacity-[0.06]"
             style={{
@@ -145,15 +142,15 @@ export default function LoginPage() {
         </div>
 
         <div className="card-in relative w-full max-w-[420px]">
-          <div className="absolute -inset-px rounded-[28px] bg-gradient-to-br from-emerald-400/25 via-transparent to-teal-400/20 dark:from-emerald-500/20 dark:to-teal-500/15 blur-[2px]" />
+          <div className="absolute -inset-px rounded-[28px] bg-gradient-to-br from-blue-400/30 via-transparent to-cyan-400/20 dark:from-blue-500/20 dark:to-cyan-500/15 blur-[2px]" />
           <div className="relative bg-white/90 dark:bg-slate-900/80 backdrop-blur-xl rounded-[26px] shadow-2xl border border-white/80 dark:border-slate-700/50 overflow-hidden">
-            <div className="h-[3px] bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600" />
+            <div className="h-[3px] bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-600" />
 
             <div className="px-8 pt-8 pb-7">
               <div className="flex flex-col items-center mb-6">
                 <div className="relative mb-4">
-                  <div className="absolute inset-0 bg-emerald-500/25 rounded-2xl blur-xl scale-110" />
-                  <div className="relative w-14 h-14 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                  <div className="absolute inset-0 bg-blue-500/25 rounded-2xl blur-xl scale-110" />
+                  <div className="relative w-14 h-14 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/35">
                     <GraduationCap className="w-7 h-7 text-white" strokeWidth={1.75} />
                   </div>
                 </div>
@@ -174,7 +171,7 @@ export default function LoginPage() {
                   <BookOpen className="w-3.5 h-3.5" />
                   <span className="text-[11px] font-bold">Mentor</span>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">
                   <Users className="w-3.5 h-3.5" />
                   <span className="text-[11px] font-bold">Talaba</span>
                 </div>
@@ -198,14 +195,14 @@ export default function LoginPage() {
                   <div
                     className={`relative rounded-xl border transition-all duration-200 ${
                       focused === "email"
-                        ? "border-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)] bg-white dark:bg-slate-800"
+                        ? "border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800"
                         : error
                           ? "border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50"
                           : "border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600"
                     }`}
                   >
                     <svg
-                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${focused === "email" ? "text-emerald-500" : "text-slate-400 dark:text-slate-500"}`}
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${focused === "email" ? "text-blue-500" : "text-slate-400 dark:text-slate-500"}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -233,14 +230,14 @@ export default function LoginPage() {
                   <div
                     className={`relative rounded-xl border transition-all duration-200 ${
                       focused === "password"
-                        ? "border-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.12)] bg-white dark:bg-slate-800"
+                        ? "border-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.12)] bg-white dark:bg-slate-800"
                         : error
                           ? "border-red-300/70 dark:border-red-500/30 bg-slate-50 dark:bg-slate-800/50"
                           : "border-slate-200 dark:border-slate-700/70 bg-slate-50/80 dark:bg-slate-800/30 hover:border-slate-300 dark:hover:border-slate-600"
                     }`}
                   >
                     <svg
-                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${focused === "password" ? "text-emerald-500" : "text-slate-400 dark:text-slate-500"}`}
+                      className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none transition-colors ${focused === "password" ? "text-blue-500" : "text-slate-400 dark:text-slate-500"}`}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -272,7 +269,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={loading || !email || !password}
-                    className="group relative w-full h-11 rounded-xl font-black text-sm transition-all duration-200 overflow-hidden disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 enabled:bg-gradient-to-r enabled:from-emerald-600 enabled:to-teal-500 enabled:hover:from-emerald-500 enabled:hover:to-teal-400 enabled:text-white enabled:shadow-lg enabled:shadow-emerald-500/30 flex items-center justify-center gap-2"
+                    className="group relative w-full h-11 rounded-xl font-black text-sm transition-all duration-200 overflow-hidden disabled:cursor-not-allowed enabled:hover:scale-[1.02] enabled:active:scale-[0.98] disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400 dark:disabled:text-slate-600 enabled:bg-gradient-to-r enabled:from-blue-600 enabled:to-blue-500 enabled:hover:from-blue-500 enabled:hover:to-cyan-500 enabled:text-white enabled:shadow-lg enabled:shadow-blue-500/30 flex items-center justify-center gap-2"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                     {loading ? (

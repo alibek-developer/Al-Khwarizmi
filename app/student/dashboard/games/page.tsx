@@ -68,9 +68,9 @@ const mockGames = [
     name: "Memory Game",
     description: "Xotira o'yini",
     icon: Gamepad2,
-    color: "emerald",
-    bg: "bg-emerald-500",
-    lightBg: "bg-emerald-50 dark:bg-emerald-500/10",
+    color: "blue",
+    bg: "bg-blue-500",
+    lightBg: "bg-blue-50 dark:bg-blue-500/10",
     xp: 45,
     plays: 0,
     unlocked: false,
@@ -95,7 +95,7 @@ const colorMap: Record<string, { text: string; border: string }> = {
   violet: { text: "text-violet-600 dark:text-violet-400", border: "border-violet-200 dark:border-violet-500/20" },
   amber: { text: "text-amber-600 dark:text-amber-400", border: "border-amber-200 dark:border-amber-500/20" },
   blue: { text: "text-blue-600 dark:text-blue-400", border: "border-blue-200 dark:border-blue-500/20" },
-  emerald: { text: "text-emerald-600 dark:text-emerald-400", border: "border-emerald-200 dark:border-emerald-500/20" },
+  emerald: { text: "text-blue-600 dark:text-blue-400", border: "border-blue-200 dark:border-blue-500/20" },
   red: { text: "text-red-600 dark:text-red-400", border: "border-red-200 dark:border-red-500/20" },
 };
 
@@ -192,7 +192,7 @@ export default function StudentGamesPage() {
 
       <div className="grid lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-500/20">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl p-5 text-white shadow-lg shadow-blue-600/20">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-white/80" />
@@ -222,7 +222,7 @@ export default function StudentGamesPage() {
               </div>
               <button
                 onClick={() => setShowQuiz(true)}
-                className="px-5 py-2.5 bg-white text-emerald-600 font-bold text-sm rounded-xl hover:bg-emerald-50 transition-colors shadow-lg"
+                className="px-5 py-2.5 bg-white text-blue-600 font-bold text-sm rounded-xl hover:bg-blue-50 transition-colors shadow-lg"
               >
                 Boshlash
               </button>
@@ -316,7 +316,7 @@ export default function StudentGamesPage() {
                   </span>
                 </div>
                 <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" style={{ width: "71%" }} />
+                  <div className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full" style={{ width: "71%" }} />
                 </div>
               </div>
               <div>
@@ -351,7 +351,7 @@ export default function StudentGamesPage() {
                 <p className="text-[10px] text-slate-400">Jami testlar</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
-                <p className="text-xl font-black text-emerald-600 dark:text-emerald-400">87%</p>
+                <p className="text-xl font-black text-blue-600 dark:text-blue-400">87%</p>
                 <p className="text-[10px] text-slate-400">O&apos;rtacha o&apos;rtacha</p>
               </div>
               <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 text-center">
@@ -372,8 +372,8 @@ export default function StudentGamesPage() {
           <div className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
             {!quizStarted ? (
               <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <HelpCircle className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                <div className="w-16 h-16 bg-blue-100 dark:bg-blue-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <HelpCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
                 </div>
                 <h2 className="text-xl font-black text-slate-900 dark:text-white mb-2">
                   {mockDailyQuiz.title}
@@ -390,7 +390,7 @@ export default function StudentGamesPage() {
                   </button>
                   <button
                     onClick={() => setQuizStarted(true)}
-                    className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-500 transition-colors"
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-colors"
                   >
                     Boshlash
                   </button>
@@ -399,10 +399,10 @@ export default function StudentGamesPage() {
             ) : finalScore !== null ? (
               <div className="p-8 text-center">
                 <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-                  finalScore >= 80 ? "bg-emerald-100 dark:bg-emerald-500/20" : "bg-amber-100 dark:bg-amber-500/20"
+                  finalScore >= 80 ? "bg-blue-100 dark:bg-blue-500/20" : "bg-amber-100 dark:bg-amber-500/20"
                 }`}>
                   {finalScore >= 80 ? (
-                    <Trophy className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+                    <Trophy className="w-10 h-10 text-blue-600 dark:text-blue-400" />
                   ) : (
                     <Star className="w-10 h-10 text-amber-600 dark:text-amber-400" />
                   )}
@@ -422,7 +422,7 @@ export default function StudentGamesPage() {
                 </div>
                 <button
                   onClick={resetQuiz}
-                  className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-500 transition-colors"
+                  className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-colors"
                 >
                   Yopish
                 </button>
@@ -440,9 +440,9 @@ export default function StudentGamesPage() {
                           key={idx}
                           className={`w-2 h-2 rounded-full ${
                             idx === currentQuestion
-                              ? "bg-emerald-500"
+                              ? "bg-blue-500"
                               : idx < currentQuestion
-                              ? "bg-emerald-300 dark:bg-emerald-600"
+                              ? "bg-blue-300 dark:bg-blue-600"
                               : "bg-slate-200 dark:bg-slate-700"
                           }`}
                         />
@@ -469,9 +469,9 @@ export default function StudentGamesPage() {
                           disabled={selectedAnswer !== null}
                           className={`w-full text-left px-4 py-3 rounded-xl border text-sm font-semibold transition-all ${
                             !selectedAnswer
-                              ? "border-slate-200 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500 text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                              ? "border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-500/10"
                               : isCorrect
-                              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400"
+                              ? "border-blue-500 bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400"
                               : isSelected
                               ? "border-red-500 bg-red-50 dark:bg-red-500/20 text-red-700 dark:text-red-400"
                               : "border-slate-200 dark:border-slate-700 opacity-50 text-slate-500"
@@ -482,7 +482,7 @@ export default function StudentGamesPage() {
                               !selectedAnswer
                                 ? "bg-slate-100 dark:bg-slate-800"
                                 : isCorrect
-                                ? "bg-emerald-500 text-white"
+                                ? "bg-blue-500 text-white"
                                 : isSelected
                                 ? "bg-red-500 text-white"
                                 : "bg-slate-100 dark:bg-slate-800"
@@ -491,7 +491,7 @@ export default function StudentGamesPage() {
                             </div>
                             {option}
                             {showResult && isCorrect && (
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500 ml-auto" />
+                              <CheckCircle2 className="w-4 h-4 text-blue-500 ml-auto" />
                             )}
                           </div>
                         </button>
@@ -502,7 +502,7 @@ export default function StudentGamesPage() {
                     <div className="mt-6 flex justify-end">
                       <button
                         onClick={nextQuestion}
-                        className="px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-500 transition-colors"
+className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-500 transition-colors"
                       >
                         {currentQuestion < questions.length - 1 ? "Keyingi savol" : "Yakunlash"}
                       </button>

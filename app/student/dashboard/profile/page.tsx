@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-const iCls = "w-full h-11 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors";
+const iCls = "w-full h-11 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors";
 const lCls = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5";
 
 export default function StudentProfilePage() {
@@ -95,7 +95,7 @@ export default function StudentProfilePage() {
   const stats = [
     { label: "XP Ballar", value: "1850", icon: Zap, color: "amber" },
     { label: "Kurslar", value: "3", icon: BookOpen, color: "violet" },
-    { label: "Sertifikatlar", value: "2", icon: Award, color: "emerald" },
+    { label: "Sertifikatlar", value: "2", icon: Award, color: "violet" },
     { label: "Guruh", value: "A", icon: GraduationCap, color: "blue" },
   ];
 
@@ -106,7 +106,7 @@ export default function StudentProfilePage() {
   return (
     <div className="space-y-5 pb-6">
       {toast && (
-        <div className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.ok ? "bg-emerald-600" : "bg-red-600"}`}>
+        <div className={`fixed bottom-5 right-5 z-[100] flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl text-sm font-semibold text-white ${toast.ok ? "bg-blue-600" : "bg-red-600"}`}>
           {toast.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
           {toast.msg}
         </div>
@@ -128,9 +128,9 @@ export default function StudentProfilePage() {
             <div className="flex items-center gap-5 mb-6">
               <div className="relative">
                 {student.avatarUrl ? (
-                  <img src={student.avatarUrl} className="w-20 h-20 rounded-2xl object-cover ring-4 ring-emerald-100 dark:ring-emerald-500/20" alt="Avatar" />
+                  <img src={student.avatarUrl} className="w-20 h-20 rounded-2xl object-cover ring-4 ring-blue-100 dark:ring-blue-500/20" alt="Avatar" />
                 ) : (
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center ring-4 ring-emerald-100 dark:ring-emerald-500/20">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center ring-4 ring-blue-100 dark:ring-blue-500/20">
                     <span className="text-white text-2xl font-black">{getInitials()}</span>
                   </div>
                 )}
@@ -141,7 +141,7 @@ export default function StudentProfilePage() {
               <div>
                 <p className="font-black text-slate-900 dark:text-white">{student.firstName} {student.lastName}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{student.email}</p>
-                <button className="mt-2 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+                <button className="mt-2 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline">
                   Rasmni o&apos;zgartirish
                 </button>
               </div>
@@ -202,7 +202,7 @@ export default function StudentProfilePage() {
               <button
                 onClick={handleSaveProfile}
                 disabled={saving}
-                className="h-11 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 font-bold text-sm transition-colors flex items-center gap-2"
+                className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 font-bold text-sm transition-colors flex items-center gap-2"
               >
                 {saving ? (
                   <>
@@ -354,7 +354,7 @@ export default function StudentProfilePage() {
 
           <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-3">
-              <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400">Xavfsizlik</span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">

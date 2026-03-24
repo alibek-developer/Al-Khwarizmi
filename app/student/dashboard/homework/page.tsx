@@ -273,7 +273,7 @@ export default function StudentHomeworkPage() {
                             setSelectedHw(hw);
                             setShowSubmit(true);
                           }}
-                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-500 transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors"
                         >
                           <Upload className="w-3 h-3" />
                           Topshirish
@@ -378,14 +378,14 @@ export default function StudentHomeworkPage() {
                 <div
                   className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
                     submitFile
-                      ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-500/10"
-                      : "border-slate-300 dark:border-slate-700 hover:border-emerald-500 dark:hover:border-emerald-500"
+                      ? "border-blue-500 bg-blue-50 dark:bg-blue-500/10"
+                      : "border-slate-300 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500"
                   }`}
                   onClick={() => document.getElementById("file-input")?.click()}
                 >
                   {submitFile ? (
                     <div className="flex items-center justify-center gap-3">
-                      <FileText className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      <FileText className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                       <div className="text-left">
                         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{submitFile.name}</p>
                         <p className="text-[11px] text-slate-400">{(submitFile.size / 1024 / 1024).toFixed(2)} MB</p>
@@ -414,7 +414,7 @@ export default function StudentHomeworkPage() {
                 <textarea
                   rows={3}
                   placeholder="Vazifa haqida qo'shimcha izoh..."
-                  className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-emerald-500 resize-none"
+                  className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 resize-none"
                   value={submitComment}
                   onChange={e => setSubmitComment(e.target.value)}
                 />
@@ -429,7 +429,7 @@ export default function StudentHomeworkPage() {
                 <button
                   onClick={handleSubmit}
                   disabled={!submitFile || submitting}
-                  className="flex-1 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 h-11 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 dark:disabled:bg-slate-700 text-white disabled:text-slate-400 font-bold text-sm transition-colors flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>

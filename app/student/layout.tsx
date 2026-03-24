@@ -148,7 +148,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
         >
           {!collapsed && (
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0">
+              <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30 shrink-0">
                 <GraduationCap
                   className="w-3.5 h-3.5 text-white"
                   strokeWidth={2}
@@ -165,7 +165,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
             </div>
           )}
           {collapsed && (
-            <div className="w-7 h-7 bg-gradient-to-br from-emerald-600 to-teal-700 rounded-lg flex items-center justify-center shadow-md shadow-emerald-500/30">
+            <div className="w-7 h-7 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-md shadow-blue-500/30">
               <GraduationCap
                 className="w-3.5 h-3.5 text-white"
                 strokeWidth={2}
@@ -194,7 +194,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
                 className={`
                   group flex items-center gap-2.5 px-3 rounded-xl text-sm font-semibold transition-all duration-150 relative
                   ${collapsed ? "py-3 justify-center" : "py-2"}
-                  ${isActive ? "bg-emerald-600 text-white shadow-md shadow-emerald-500/25" : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"}`}
+                  ${isActive ? "bg-blue-600 text-white shadow-md shadow-blue-500/25" : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"}`}
               >
                 {isActive && !collapsed && (
                   <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-white/60 rounded-r-full" />
@@ -207,7 +207,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
                   <div className="flex-1 min-w-0 leading-none">
                     <span className="block truncate text-[13px]">{label}</span>
                     <span
-                      className={`block text-[10px] font-medium truncate mt-0.5 ${isActive ? "text-emerald-200" : "text-slate-400 dark:text-slate-600"}`}
+                      className={`block text-[10px] font-medium truncate mt-0.5 ${isActive ? "text-blue-200" : "text-slate-400 dark:text-slate-600"}`}
                     >
                       {labelUz}
                     </span>
@@ -226,15 +226,15 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
 
         <div className="px-2 pb-3 pt-2 border-t border-slate-100 dark:border-slate-800 space-y-0.5 shrink-0">
           {!collapsed && student && (
-            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20">
+            <div className="flex items-center gap-2.5 px-3 py-2.5 mb-1 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
               {student.avatar_url ? (
                 <img
                   src={student.avatar_url}
-                  className="w-8 h-8 rounded-xl object-cover ring-2 ring-emerald-200 dark:ring-emerald-500/20"
+                  className="w-8 h-8 rounded-xl object-cover ring-2 ring-blue-200 dark:ring-blue-500/20"
                   alt={student.full_name}
                 />
               ) : (
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0">
                   <span className="text-white text-[10px] font-black">
                     {getInitials(student.full_name)}
                   </span>
@@ -245,7 +245,7 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
                   {student.full_name}
                 </p>
                 {student.email && (
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400 truncate mt-0.5">
+                  <p className="text-[10px] text-blue-600 dark:text-blue-400 truncate mt-0.5">
                     {student.email}
                   </p>
                 )}
@@ -258,11 +258,11 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
               {student.avatar_url ? (
                 <img
                   src={student.avatar_url}
-                  className="w-8 h-8 rounded-xl object-cover ring-2 ring-emerald-200 dark:ring-emerald-500/20"
+                  className="w-8 h-8 rounded-xl object-cover ring-2 ring-blue-200 dark:ring-blue-500/20"
                   alt={student.full_name}
                 />
               ) : (
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0">
                   <span className="text-white text-[10px] font-black">
                     {getInitials(student.full_name)}
                   </span>
@@ -361,11 +361,11 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
               {student?.avatar_url ? (
                 <img
                   src={student.avatar_url}
-                  className="w-8 h-8 rounded-xl object-cover ring-2 ring-emerald-200 dark:ring-emerald-500/20"
+                  className="w-8 h-8 rounded-xl object-cover ring-2 ring-blue-200 dark:ring-blue-500/20"
                   alt={student.full_name}
                 />
               ) : (
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-sm">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-sm">
                   <span className="text-white text-xs font-black">
                     {student ? getInitials(student.full_name) : "T"}
                   </span>

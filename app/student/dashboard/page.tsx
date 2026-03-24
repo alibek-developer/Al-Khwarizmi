@@ -39,7 +39,7 @@ const mockStats = {
 const mockCourseProgress = [
   { name: "Web Development", progress: 72, total: 24, completed: 17, color: "bg-violet-500" },
   { name: "English Course", progress: 45, total: 20, completed: 9, color: "bg-blue-500" },
-  { name: "Data Science", progress: 20, total: 30, completed: 6, color: "bg-emerald-500" },
+  { name: "Data Science", progress: 20, total: 30, completed: 6, color: "bg-blue-500" },
 ];
 
 export default function StudentDashboardPage() {
@@ -77,9 +77,9 @@ export default function StudentDashboardPage() {
             {today}
           </p>
         </div>
-        <div className="hidden sm:flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl px-3.5 py-2">
-          <Flame className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+        <div className="hidden sm:flex items-center gap-2 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-xl px-3.5 py-2">
+          <Flame className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          <span className="text-xs font-bold text-blue-700 dark:text-blue-400">
             {mockStats.streak} kun ketma-ket
           </span>
         </div>
@@ -91,7 +91,7 @@ export default function StudentDashboardPage() {
             <div className="w-9 h-9 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl flex items-center justify-center">
               <Zap className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <span className="flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+            <span className="flex items-center gap-0.5 text-[11px] font-bold px-1.5 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400">
               <TrendingUp className="w-3 h-3" /> +150
             </span>
           </div>
@@ -122,8 +122,8 @@ export default function StudentDashboardPage() {
 
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-sm hover:shadow-md transition-all">
           <div className="flex items-start justify-between mb-3">
-            <div className="w-9 h-9 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-xl flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="w-9 h-9 bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-0.5">
@@ -192,14 +192,14 @@ export default function StudentDashboardPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
-            <div className="bg-emerald-50 dark:bg-emerald-500/10 rounded-xl p-3">
+            <div className="bg-blue-50 dark:bg-blue-500/10 rounded-xl p-3">
               <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                   Topshirilgan
                 </span>
               </div>
-              <p className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+              <p className="text-lg font-black text-blue-600 dark:text-blue-400">
                 {mockStats.homeworkDone}
               </p>
             </div>
@@ -249,7 +249,7 @@ export default function StudentDashboardPage() {
                 }`}>
                   {user.rank}
                 </div>
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shrink-0">
                   <span className="text-white text-[9px] font-black">
                     {user.avatar}
                   </span>

@@ -82,7 +82,7 @@ export default function StudentCoursesPage() {
   const courseGradients: Record<number, string> = {
     1: "from-violet-500 to-purple-600",
     2: "from-blue-500 to-cyan-600",
-    3: "from-emerald-500 to-teal-600",
+    3: "from-blue-500 to-indigo-600",
   };
 
   return (
@@ -130,7 +130,7 @@ export default function StudentCoursesPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center">
                       <span className="text-white text-[8px] font-black">
                         {course.mentorAvatar}
                       </span>
@@ -178,7 +178,7 @@ export default function StudentCoursesPage() {
                   onClick={() => setActiveTab("lessons")}
                   className={`flex-1 px-4 py-3 text-xs font-bold transition-colors ${
                     activeTab === "lessons"
-                      ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500"
+                      ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-b-2 border-blue-500"
                       : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -191,7 +191,7 @@ export default function StudentCoursesPage() {
                   onClick={() => setActiveTab("materials")}
                   className={`flex-1 px-4 py-3 text-xs font-bold transition-colors ${
                     activeTab === "materials"
-                      ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500"
+                      ? "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border-b-2 border-blue-500"
                       : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
                   }`}
                 >
@@ -278,7 +278,7 @@ export default function StudentCoursesPage() {
                               {material.size}
                             </p>
                           </div>
-                          <button className="px-3 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold hover:bg-emerald-200 dark:hover:bg-emerald-500/30 transition-colors">
+                          <button className="px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[11px] font-bold hover:bg-blue-200 dark:hover:bg-blue-500/30 transition-colors">
                             Yuklab olish
                           </button>
                         </div>
@@ -298,7 +298,7 @@ export default function StudentCoursesPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-slate-500 dark:text-slate-400">Mentor</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center">
                         <span className="text-white text-[8px] font-black">
                           {selectedCourse.mentorAvatar}
                         </span>
