@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
 import {
 	AlertCircle,
 	BookOpen,
@@ -16,10 +15,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 // ── Mentor ID — 3 usulda aniqlanadi ──────────────────────────────────────
 // 1. localStorage (login paytida saqlangan)
 // 2. NEXT_PUBLIC_MENTOR_ID env

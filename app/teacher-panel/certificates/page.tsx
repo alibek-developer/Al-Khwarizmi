@@ -1,6 +1,6 @@
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import {
 	Award,
 	CheckCircle2,
@@ -11,11 +11,6 @@ import {
 	Save,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
 const MENTOR_ID = process.env.NEXT_PUBLIC_MENTOR_ID || ''
 
 type Group = { id: string; name: string }

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { studentApi } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 const iCls = "w-full h-11 px-3 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-white/10 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors";
 const lCls = "block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5";
@@ -34,6 +35,14 @@ export default function StudentProfilePage() {
     group: "",
     avatarUrl: "",
     total_points: 0,
+    created_at: "",
+  });
+
+  const [stats, setStats] = useState({
+    xp: 0,
+    courses: 0,
+    certificates: 0,
+    gamePoints: 0,
   });
 
   const [passwords, setPasswords] = useState({
@@ -50,19 +59,37 @@ export default function StudentProfilePage() {
     const fetchStudent = async () => {
       try {
         const studentId = localStorage.getItem("studentId");
-        if (!studentId) return;
-        
-        const data = await studentApi.getById(Number(studentId));
+        if (!studentId) { setLoading(false); return }
+        const id = Number(studentId)
+
+        const [studentData, enrollments, certs, games] = await Promise.all([
+          studentApi.getById(id),
+          supabase.from('group_enrollments').select('group:groups(name)').eq('student_id', id),
+          supabase.from('certificates').select('id').eq('student_id', id),
+          supabase.from('game_results').select('points_earned').eq('student_id', id),
+        ])
+
+        const gamePoints = (games.data || []).reduce((sum, g) => sum + g.points_earned, 0)
+        const groupNames = (enrollments.data || []).map((r: unknown) => (r as { group: { name: string } }).group?.name).filter(Boolean)
+
         setStudent({
-          id: data.id,
-          firstName: data.first_name || "",
-          lastName: data.last_name || "",
-          email: data.email || "",
-          phone: data.phone || "",
-          group: data.father_name || "",
-          avatarUrl: data.avatar || "",
-          total_points: data.total_points || 0,
-        });
+          id: studentData.id,
+          firstName: studentData.first_name || "",
+          lastName: studentData.last_name || "",
+          email: studentData.email || "",
+          phone: studentData.phone || "",
+          group: groupNames.join(', ') || '—',
+          avatarUrl: studentData.avatar || "",
+          total_points: studentData.total_points || 0,
+          created_at: studentData.created_at || "",
+        })
+
+        setStats({
+          xp: studentData.total_points || 0,
+          courses: (enrollments.data || []).length,
+          certificates: (certs.data || []).length,
+          gamePoints,
+        })
       } catch (error) {
         console.error("Failed to fetch student:", error);
         const name = localStorage.getItem("studentName");
@@ -134,11 +161,11 @@ export default function StudentProfilePage() {
     }
   };
 
-  const stats = [
-    { label: "XP Ballar", value: student.total_points.toString(), icon: Zap, color: "amber" },
-    { label: "Kurslar", value: "0", icon: BookOpen, color: "violet" },
-    { label: "Sertifikatlar", value: "0", icon: Award, color: "violet" },
-    { label: "Guruh", value: student.group || "A", icon: GraduationCap, color: "blue" },
+  const statItems = [
+    { label: "XP Ballar", value: stats.xp.toString(), icon: Zap, color: "amber" },
+    { label: "Kurslar", value: stats.courses.toString(), icon: BookOpen, color: "violet" },
+    { label: "Sertifikatlar", value: stats.certificates.toString(), icon: Award, color: "emerald" },
+    { label: "O'yin ballari", value: stats.gamePoints.toString(), icon: Zap, color: "amber" },
   ];
 
   const getInitials = () => {
@@ -360,7 +387,7 @@ export default function StudentProfilePage() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5">
             <h3 className="font-black text-slate-900 dark:text-white text-sm mb-4">Statistika</h3>
             <div className="space-y-3">
-              {stats.map(stat => {
+              {statItems.map(stat => {
                 const Icon = stat.icon;
                 const colorClasses: Record<string, { bg: string; text: string }> = {
                   amber: { bg: "bg-amber-50 dark:bg-amber-500/10", text: "text-amber-600 dark:text-amber-400" },
@@ -389,15 +416,13 @@ export default function StudentProfilePage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500 dark:text-slate-400">Guruh</span>
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{student.group || "A"}</span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{student.group}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs text-slate-500 dark:text-slate-400">Ro&apos;yxatdan o&apos;tgan</span>
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">2025-09-01</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-500 dark:text-slate-400">Oxirgi kirish</span>
-                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Bugun 14:32</span>
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  {student.created_at ? new Date(student.created_at).toLocaleDateString('uz-UZ') : '—'}
+                </span>
               </div>
             </div>
           </div>

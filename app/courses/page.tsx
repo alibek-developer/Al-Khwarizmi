@@ -3,7 +3,7 @@
 import { Footer } from '@/components/footer'
 import { Header } from '@/components/header'
 import { useIsUzbek } from '@/components/language-context'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 import {
 	ArrowRight,
 	BookOpen,
@@ -22,11 +22,6 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useMemo, useRef, useState } from 'react'
-
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Mentor = {

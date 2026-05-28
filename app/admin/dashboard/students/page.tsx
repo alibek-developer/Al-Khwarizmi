@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -17,13 +16,11 @@ import {
 	Trash2,
 	UserPlus,
 	X,
+	XCircle,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type StudentRow = {
@@ -42,6 +39,7 @@ type StudentRow = {
 	created_at: string
 	email?: string
 	password?: string
+	courses?: { price: number; title_en: string } | null
 }
 
 type Student = {
@@ -57,6 +55,7 @@ type Student = {
 	pinfl: string
 	course: string
 	course_id: number
+	course_price: number
 	payment_amount: number
 	date: string
 	status: string
@@ -71,6 +70,7 @@ type Student = {
 // Kurslar DB dan yuklanadi — pastda fetchCourses() bilan to'ldiriladi
 let COURSE_MAP: Record<number, string> = {}
 let COURSE_ID_MAP: Record<string, number> = {}
+let COURSE_PRICE_MAP: Record<number, number> = {}
 
 const colors = [
 	'from-blue-500 to-indigo-600',
@@ -149,8 +149,9 @@ function rowToStudent(row: StudentRow, idx: number): Student {
 		parent_phone: row.parent_phone || '',
 		certificate_id: row.certificate_id || '',
 		pinfl: row.pinfl || '',
-		course: COURSE_MAP[row.course_id] ?? `Kurs ${row.course_id}`,
+		course: row.courses?.title_en || COURSE_MAP[row.course_id] || `Kurs ${row.course_id}`,
 		course_id: row.course_id,
+		course_price: row.courses?.price ?? COURSE_PRICE_MAP[row.course_id] ?? 0,
 		payment_amount: row.payment_amount || 0,
 		date: new Date(row.created_at).toLocaleDateString('uz-UZ', {
 			day: 'numeric',
@@ -158,7 +159,7 @@ function rowToStudent(row: StudentRow, idx: number): Student {
 			year: 'numeric',
 		}),
 		status: row.status,
-		paid: row.payment_amount ? `$${row.payment_amount}` : '$0',
+		paid: (row.payment_amount || row.courses?.price || COURSE_PRICE_MAP[row.course_id]) ? `$${row.payment_amount || row.courses?.price || COURSE_PRICE_MAP[row.course_id]}` : '$0',
 		avatar:
 			full_name
 				.split(' ')
@@ -230,12 +231,17 @@ function ActionMenu({
 	onView,
 	onEdit,
 	onDelete,
+	onApprove,
+	onReject,
 }: {
 	student: Student
 	onView: () => void
 	onEdit: () => void
 	onDelete: () => void
+	onApprove?: () => void
+	onReject?: () => void
 }) {
+	const isPending = student.status === 'pending'
 	const [open, setOpen] = useState(false)
 	const [pos, setPos] = useState({ top: 0, right: 0 })
 
@@ -286,6 +292,28 @@ function ActionMenu({
 					>
 						<Edit2 className='w-3.5 h-3.5' /> Tahrirlash
 					</button>
+					{isPending && onApprove && (
+						<button
+							onClick={() => {
+								onApprove()
+								setOpen(false)
+							}}
+							className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 transition-colors'
+						>
+							<CheckCircle2 className='w-3.5 h-3.5' /> Tasdiqlash
+						</button>
+					)}
+					{isPending && onReject && (
+						<button
+							onClick={() => {
+								onReject()
+								setOpen(false)
+							}}
+							className='w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors'
+						>
+							<XCircle className='w-3.5 h-3.5' /> Rad etish
+						</button>
+					)}
 					<button
 						onClick={() => {
 							onDelete()
@@ -608,7 +636,9 @@ function StudentForm({
 
 			<div className='bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 space-y-3'>
 				<p className='text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2'>
-					<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[7px]'>🔑</span>
+					<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[7px]'>
+						🔑
+					</span>
 					Student Panel Login Ma&apos;lumotlari
 				</p>
 				<div className='grid grid-cols-2 gap-3'>
@@ -649,10 +679,11 @@ export default function StudentsPage() {
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
 	const [search, setSearch] = useState('')
-	const [filterStatus, setFilterStatus] = useState('all')
+	const [filterStatus, setFilterStatus] = useState('active')
 	const [showAdd, setShowAdd] = useState(false)
 	const [editItem, setEditItem] = useState<Student | null>(null)
 	const [viewItem, setViewItem] = useState<Student | null>(null)
+	const [viewCourses, setViewCourses] = useState<{ name: string; group: string }[]>([])
 	const [deleteItem, setDeleteItem] = useState<Student | null>(null)
 	const [toast, setToast] = useState<{
 		msg: string
@@ -669,7 +700,7 @@ export default function StudentsPage() {
 		setLoading(true)
 		const { data, error } = await supabase
 			.from('students')
-			.select('*')
+			.select('*, courses(price, title_en)')
 			.order('created_at', { ascending: false })
 		if (error) {
 			showToast('Yuklashda xato', 'error')
@@ -681,58 +712,20 @@ export default function StudentsPage() {
 	}
 
 	const fetchCourses = async () => {
-		const { data } = await supabase
+		const { data, error } = await supabase
 			.from('courses')
-			.select('id, title_en, title_uz')
+			.select('id, title_en, title_uz, price')
 			.order('title_en')
-		let list = data || []
-
-		// Agar courses jadvali bo'sh bo'lsa — default 4 ta kursni qo'shamiz
-		if (list.length === 0) {
-			const defaults = [
-				{
-					title_en: 'Web Development',
-					title_uz: 'Veb Dasturlash',
-					price: 0,
-					rating: 5.0,
-					lessons_count: 0,
-					total_students: 0,
-				},
-				{
-					title_en: 'English Course',
-					title_uz: 'Ingliz tili',
-					price: 0,
-					rating: 5.0,
-					lessons_count: 0,
-					total_students: 0,
-				},
-				{
-					title_en: 'Data Science',
-					title_uz: "Ma'lumotlar Fanlari",
-					price: 0,
-					rating: 5.0,
-					lessons_count: 0,
-					total_students: 0,
-				},
-				{
-					title_en: 'AI & ML',
-					title_uz: "Sun'iy Intellekt",
-					price: 0,
-					rating: 5.0,
-					lessons_count: 0,
-					total_students: 0,
-				},
-			]
-			const { data: inserted } = await supabase
-				.from('courses')
-				.insert(defaults)
-				.select('id, title_en, title_uz')
-			list = inserted || []
+		if (error) {
+			showToast("Kurslarni yuklashda xato: " + error.message, 'error')
+			return
 		}
+		const list = data || []
 
 		setCoursesDB(list)
 		COURSE_MAP = Object.fromEntries(list.map(c => [c.id, c.title_en]))
 		COURSE_ID_MAP = Object.fromEntries(list.map(c => [c.title_en, c.id]))
+		COURSE_PRICE_MAP = Object.fromEntries(list.map(c => [c.id, Number(c.price) || 0]))
 		// Birinchi kursni default qilib o'rnatamiz
 		if (list.length > 0) {
 			setForm(prev => ({ ...prev, course: prev.course || list[0].title_en }))
@@ -740,13 +733,43 @@ export default function StudentsPage() {
 	}
 
 	useEffect(() => {
-		fetchCourses()
-		fetchStudents()
+		;(async () => {
+			await fetchCourses()
+			await fetchStudents()
+		})()
 	}, [])
+
+	// Student form ochilganda kurslarni yangilash
+	useEffect(() => {
+		if (showAdd) {
+			fetchCourses()
+		}
+	}, [showAdd])
+
+	// View modal ochilganda guruh a'zoligini yuklash
+	useEffect(() => {
+		if (!viewItem) { setViewCourses([]); return }
+		;(async () => {
+			const { data } = await supabase
+				.from('group_enrollments')
+				.select('groups(name, courses(title_en))')
+				.eq('student_id', viewItem.id)
+			if (data) {
+				type EnrollRow = { groups: { name: string; courses: { title_en: string } } }
+				setViewCourses(
+					(data as EnrollRow[]).map(r => ({
+						name: r.groups.courses.title_en,
+						group: r.groups.name,
+					}))
+				)
+			}
+		})()
+	}, [viewItem])
 
 	const handleAdd = async () => {
 		if (!form.first_name || !form.last_name || !form.password) return
 		setSaving(true)
+		const courseId = COURSE_ID_MAP[form.course] ?? null
 		const { error } = await supabase.from('students').insert([
 			{
 				first_name: form.first_name,
@@ -755,10 +778,10 @@ export default function StudentsPage() {
 				birth_date: form.birth_date || null,
 				phone: form.phone,
 				parent_phone: form.parent_phone,
-				certificate_id: form.certificate_id,
+				certificate_id: form.certificate_id || null,
 				pinfl: form.pinfl,
-				course_id: COURSE_ID_MAP[form.course] ?? null,
-				payment_amount: 0,
+				course_id: courseId,
+				payment_amount: courseId ? COURSE_PRICE_MAP[courseId] ?? 0 : 0,
 				status: 'active',
 				email: form.email || null,
 				password: form.password,
@@ -785,9 +808,9 @@ export default function StudentsPage() {
 			birth_date: editItem.birth_date || null,
 			phone: editItem.phone,
 			parent_phone: editItem.parent_phone,
-			certificate_id: editItem.certificate_id,
-			pinfl: editItem.pinfl,
-			course_id: COURSE_ID_MAP[editItem.course] ?? editItem.course_id ?? null,
+		certificate_id: editItem.certificate_id || null,
+				pinfl: editItem.pinfl || null,
+			course_id: COURSE_ID_MAP[editItem.course] ?? null,
 			status: editItem.status,
 			email: editItem.email || null,
 		}
@@ -822,6 +845,36 @@ export default function StudentsPage() {
 		}
 		showToast("Talaba o'chirildi!")
 		setDeleteItem(null)
+		fetchStudents()
+	}
+
+	const handleApprove = async (s: Student) => {
+		setSaving(true)
+		const { error } = await supabase
+			.from('students')
+			.update({ status: 'active' })
+			.eq('id', s.id)
+		setSaving(false)
+		if (error) {
+			showToast('Tasdiqlashda xato: ' + error.message, 'error')
+			return
+		}
+		showToast(`${s.full_name} tasdiqlandi!`)
+		fetchStudents()
+	}
+
+	const handleReject = async (s: Student) => {
+		setSaving(true)
+		const { error } = await supabase
+			.from('students')
+			.update({ status: 'inactive' })
+			.eq('id', s.id)
+		setSaving(false)
+		if (error) {
+			showToast('Rad etishda xato: ' + error.message, 'error')
+			return
+		}
+		showToast(`${s.full_name} rad etildi`)
 		fetchStudents()
 	}
 
@@ -867,7 +920,9 @@ export default function StudentsPage() {
 						</button>
 						<button
 							onClick={handleAdd}
-							disabled={saving || !form.first_name || !form.last_name || !form.password}
+							disabled={
+								saving || !form.first_name || !form.last_name || !form.password
+							}
 							className='flex-1 h-10 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-sm font-black transition-colors flex items-center justify-center gap-2'
 						>
 							{saving ? (
@@ -1027,7 +1082,9 @@ export default function StudentsPage() {
 						</div>
 						<div className='bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl p-4 space-y-3'>
 							<p className='text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-2'>
-								<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[7px]'>🔑</span>
+								<span className='w-3 h-3 rounded-full bg-emerald-500 flex items-center justify-center text-white text-[7px]'>
+									🔑
+								</span>
 								Student Panel Login Ma&apos;lumotlari
 							</p>
 							<div className='grid grid-cols-2 gap-3'>
@@ -1144,6 +1201,20 @@ export default function StudentsPage() {
 							</div>
 						))}
 					</div>
+
+					{viewCourses.length > 0 && (
+						<div className='mt-4 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 rounded-xl px-4 py-3'>
+							<p className='text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest mb-2'>
+								Guruh a'zoligi
+							</p>
+							{viewCourses.map((vc, i) => (
+								<div key={i} className='flex justify-between text-xs py-1'>
+									<span className='text-slate-600 dark:text-slate-400'>{vc.group}</span>
+									<span className='font-bold text-slate-900 dark:text-white'>{vc.name}</span>
+								</div>
+							))}
+						</div>
+					)}
 
 					{viewItem.email && (
 						<div className='mt-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl px-4 py-3'>
@@ -1432,6 +1503,8 @@ export default function StudentsPage() {
 														onView={() => setViewItem(s)}
 														onEdit={() => setEditItem(s)}
 														onDelete={() => setDeleteItem(s)}
+														onApprove={() => handleApprove(s)}
+														onReject={() => handleReject(s)}
 													/>
 												</td>
 											</tr>

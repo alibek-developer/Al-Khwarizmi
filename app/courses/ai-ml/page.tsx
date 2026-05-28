@@ -14,6 +14,7 @@ import {
 	Users,
 } from 'lucide-react'
 import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
 
 const curriculum = [
 	{
@@ -122,7 +123,40 @@ export default function AiMlPage() {
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
 		setSubmitting(true)
-		await new Promise(r => setTimeout(r, 1800))
+
+		const parts = form.name.trim().split(" ")
+		const first_name = parts[0]
+		const last_name = parts.length > 1 ? parts.slice(1).join(" ") : ""
+
+		const { data: course } = await supabase
+			.from("courses")
+			.select("id, price")
+			.eq("title_en", "AI & Machine Learning")
+			.single()
+
+		const { error: dbError } = await supabase.from("students").insert([
+			{
+				first_name,
+				last_name,
+				father_name: null,
+				email: form.email.trim() || null,
+				birth_date: null,
+				phone: form.phone.trim(),
+				parent_phone: null,
+				certificate_id: null,
+				pinfl: null,
+				course_id: course?.id ?? null,
+				payment_amount: course?.price ?? 0,
+				status: "pending",
+			},
+		])
+
+		if (dbError) {
+			console.error("Supabase error:", dbError)
+			setSubmitting(false)
+			return
+		}
+
 		setSubmitting(false)
 		setSuccess(true)
 	}

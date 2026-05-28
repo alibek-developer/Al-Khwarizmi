@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -16,10 +15,7 @@ import {
 import { useEffect, useState } from 'react'
 
 // ─── Supabase ──────────────────────────────────────────────────────────────
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type ReviewRow = {
@@ -46,19 +42,24 @@ type Review = {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────
-const COURSE_MAP: Record<number, string> = {
-	1: 'Web Development',
-	2: 'English Course',
-	3: 'Data Science',
-	4: 'AI & ML',
+let coursesCache: { id: number; title_en: string; title_uz: string }[] = []
+const getCourses = async () => {
+	if (coursesCache.length > 0) return coursesCache
+	const { data } = await supabase
+		.from('courses')
+		.select('id, title_en, title_uz')
+		.order('id')
+	if (data) coursesCache = data
+	return coursesCache || []
 }
-const COURSE_ID_MAP: Record<string, number> = {
-	'Web Development': 1,
-	'English Course': 2,
-	'Data Science': 3,
-	'AI & ML': 4,
+const getCourseName = (id: number) => {
+	const c = coursesCache.find(c => c.id === id)
+	return c ? c.title_en : `Kurs #${id}`
 }
-const courses = ['Web Development', 'English Course', 'Data Science', 'AI & ML']
+const getCourseId = (name: string) => {
+	const c = coursesCache.find(c => c.title_en === name || c.title_uz === name)
+	return c ? c.id : 1
+}
 
 const colors = [
 	'from-blue-500 to-indigo-600',
@@ -86,7 +87,7 @@ function rowToReview(row: ReviewRow, idx: number): Review {
 			.slice(0, 2)
 			.toUpperCase(),
 		color: colors[idx % colors.length],
-		course: COURSE_MAP[row.course_id] ?? `Kurs ${row.course_id}`,
+		course: getCourseName(row.course_id),
 		course_id: row.course_id,
 		rating: row.rating,
 		comment: row.comment,
@@ -254,6 +255,7 @@ const dist = [5, 4, 3, 2, 1]
 // ─── Main Page ─────────────────────────────────────────────────────────────
 export default function ReviewsPage() {
 	const [reviews, setReviews] = useState<Review[]>([])
+	const [courses, setCourses] = useState<{ id: number; title_en: string; title_uz: string }[]>([])
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
 	const [search, setSearch] = useState('')
@@ -268,10 +270,12 @@ export default function ReviewsPage() {
 
 	const [form, setForm] = useState({
 		student: '',
-		course: 'Web Development',
+		course: '',
 		rating: 5,
 		comment: '',
 	})
+
+	const courseOptions = courses.map(c => c.title_en)
 
 	// ── Toast helper ──
 	const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
@@ -282,6 +286,8 @@ export default function ReviewsPage() {
 	// ── Fetch ──
 	const fetchReviews = async () => {
 		setLoading(true)
+		const loadedCourses = await getCourses()
+		setCourses(loadedCourses)
 		const { data, error } = await supabase
 			.from('reviews')
 			.select('*')
@@ -291,7 +297,11 @@ export default function ReviewsPage() {
 			setLoading(false)
 			return
 		}
+		coursesCache = loadedCourses
 		setReviews((data as ReviewRow[]).map(rowToReview))
+		if (!form.course && loadedCourses.length > 0) {
+			setForm(p => ({ ...p, course: loadedCourses[0].title_en }))
+		}
 		setLoading(false)
 	}
 
@@ -306,7 +316,7 @@ export default function ReviewsPage() {
 		const { error } = await supabase.from('reviews').insert([
 			{
 				student_name: form.student,
-				course_id: COURSE_ID_MAP[form.course] ?? 1,
+				course_id: getCourseId(form.course),
 				rating: form.rating,
 				comment: form.comment,
 				is_approved: false,
@@ -319,7 +329,8 @@ export default function ReviewsPage() {
 		}
 		showToast("Sharh muvaffaqiyatli qo'shildi!")
 		setShowAdd(false)
-		setForm({ student: '', course: 'Web Development', rating: 5, comment: '' })
+		const defaultCourse = courses.length > 0 ? courses[0].title_en : ''
+		setForm({ student: '', course: defaultCourse, rating: 5, comment: '' })
 		fetchReviews()
 	}
 
@@ -394,9 +405,10 @@ export default function ReviewsPage() {
 					title="Yangi Sharh Qo'shish"
 					onClose={() => {
 						setShowAdd(false)
+						const defaultCourse = courses.length > 0 ? courses[0].title_en : ''
 						setForm({
 							student: '',
-							course: 'Web Development',
+							course: defaultCourse,
 							rating: 5,
 							comment: '',
 						})
@@ -425,7 +437,7 @@ export default function ReviewsPage() {
 									}
 								>
 									{courses.map(c => (
-										<option key={c}>{c}</option>
+										<option key={c.id} value={c.title_en}>{c.title_en}</option>
 									))}
 								</select>
 							</div>

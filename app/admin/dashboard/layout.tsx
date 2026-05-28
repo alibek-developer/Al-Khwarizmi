@@ -74,7 +74,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
 	useEffect(() => {
 		setMounted(true)
-	}, [])
+
+		const isLoggedIn = localStorage.getItem('adminLoggedIn') === 'true'
+		const userRole = localStorage.getItem('userRole')
+		if (!isLoggedIn || userRole !== 'admin') {
+			router.replace('/login')
+			return
+		}
+	}, [router])
 
 	const handleLogout = () => {
 		localStorage.removeItem('adminLoggedIn')
@@ -332,9 +339,9 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 								<p className='text-xs font-bold text-slate-900 dark:text-white'>
 									Admin
 								</p>
-								<p className='text-[10px] text-slate-400 truncate max-w-[120px]'>
-									inoqdost478@gmail.com
-								</p>
+									<p className='text-[10px] text-slate-400 truncate max-w-[120px]'>
+										Admin
+									</p>
 							</div>
 						</div>
 					</div>

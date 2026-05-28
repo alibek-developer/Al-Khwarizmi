@@ -1,6 +1,5 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { Footer } from "@/components/footer";
 import { Header } from "@/components/header";
 import { Input } from "@/components/ui/input";
@@ -28,10 +27,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
+import { supabase } from '@/lib/supabase'
 
 /* ─────────────────────────────────────────
    ICON MAPPING — title_en bo'yicha avtomatik icon
@@ -40,6 +36,7 @@ type CourseUI = {
   id: number;
   label: string;
   labelUz: string;
+  price: number;
   icon: React.ElementType;
   color: string;
   bg: string;
@@ -156,13 +153,14 @@ export default function ContactPage() {
   useEffect(() => {
     supabase
       .from("courses")
-      .select("id, title_en, title_uz")
+      .select("id, title_en, title_uz, price")
       .order("id")
       .then(({ data }) => {
         const list: CourseUI[] = (data || []).map((c) => ({
           id: c.id,
           label: c.title_en,
           labelUz: c.title_uz || "",
+          price: c.price || 0,
           ...getCourseIcon(c.title_en),
         }));
         setCourses(list);
@@ -204,31 +202,36 @@ export default function ContactPage() {
         return;
       }
 
-      // 2. Ism → first_name / last_name ga ajratish
+      // 2. Ism → first_name / last_name ga ajratish (1-so'z ism, qolgani familiya)
       const parts = formData.name.trim().split(" ");
-      const last_name = parts.length > 1 ? parts[0] : "";
-      const first_name = parts.length > 1 ? parts.slice(1).join(" ") : parts[0];
+      const first_name = parts[0];
+      const last_name = parts.length > 1 ? parts.slice(1).join(" ") : "";
 
       // 3. students jadvaliga yozish
       const { error: dbError } = await supabase.from("students").insert([
         {
           first_name,
           last_name,
-          father_name: "",
+          father_name: null,
+          email: formData.email.trim() || null,
           birth_date: null,
           phone: formData.phone.trim(),
-          parent_phone: "",
-          certificate_id: "",
-          pinfl: "",
+          parent_phone: null,
+          certificate_id: null,
+          pinfl: null,
           course_id: courseId,
-          payment_amount: 0,
+          payment_amount: selectedCourse.price,
           status: "pending",
         },
       ]);
 
       if (dbError) {
         console.error("Supabase error:", dbError);
-        setSubmitError("Xato yuz berdi. Iltimos qayta urinib ko'ring.");
+        if (dbError.code === "23505") {
+          setSubmitError("Bu email allaqachon ro'yxatdan o'tgan. Siz bilan tez orada bog'lanamiz.");
+        } else {
+          setSubmitError("Xato yuz berdi. Iltimos qayta urinib ko'ring.");
+        }
         setIsSubmitting(false);
         return;
       }

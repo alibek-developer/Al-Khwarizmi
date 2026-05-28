@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import {
   AlertCircle,
   ArrowRight,
@@ -13,11 +13,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 const ADMIN_EMAIL = "inoqdost478@gmail.com";
 const ADMIN_PASSWORD = "itparkadmin";
@@ -89,6 +84,7 @@ export default function LoginPage() {
       .from("students")
       .select("id, first_name, last_name, email, password")
       .eq("email", email.trim())
+      .eq("status", "active")
       .single();
 
     if (!studentErr && student && student.password === password) {

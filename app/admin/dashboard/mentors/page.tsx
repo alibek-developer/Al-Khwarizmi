@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
 import {
 	AlertCircle,
 	CheckCircle2,
@@ -20,10 +19,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 
 type Mentor = {
 	id: number

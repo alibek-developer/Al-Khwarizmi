@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@supabase/supabase-js'
 import {
 	AlertCircle,
 	ArrowRightLeft,
@@ -23,10 +22,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type Group = {

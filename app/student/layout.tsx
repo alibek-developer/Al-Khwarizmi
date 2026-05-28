@@ -4,6 +4,7 @@ import {
   Award,
   BookOpen,
   ChevronLeft,
+  CreditCard,
   Gamepad2,
   GraduationCap,
   Home,
@@ -50,6 +51,12 @@ const navItems = [
     label: "Sertifikat",
     labelUz: "Sertifikatlar",
     icon: Award,
+  },
+  {
+    href: "/student/dashboard/payments",
+    label: "To'lovlar",
+    labelUz: "To'lovlar",
+    icon: CreditCard,
   },
   {
     href: "/student/dashboard/profile",

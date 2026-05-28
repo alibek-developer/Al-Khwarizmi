@@ -4,7 +4,6 @@ import { Footer } from '@/components/footer'
 import { Header } from '@/components/header'
 import { useIsUzbek } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
-import { createClient } from '@supabase/supabase-js'
 import {
 	ArrowRight,
 	Award,
@@ -29,10 +28,7 @@ import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
 // ─── Supabase ──────────────────────────────────────────────────────────────
-const supabase = createClient(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-)
+import { supabase } from '@/lib/supabase'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 type CourseDB = {

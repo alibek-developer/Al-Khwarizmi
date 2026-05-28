@@ -1,6 +1,6 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import {
   Award,
   BookOpen,
@@ -18,11 +18,6 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-);
 
 const navItems = [
   {
@@ -144,14 +139,22 @@ export default function TeacherLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [mentor, setMentor] = useState<MentorInfo | null>(null);
 
-  // Theme + mount
+  // Auth check + Theme + mount
   useEffect(() => {
     setMounted(true);
+
+    const isLoggedIn = localStorage.getItem("teacherLoggedIn") === "true";
+    const userRole = localStorage.getItem("userRole");
+    if (!isLoggedIn || userRole !== "teacher") {
+      router.replace("/login");
+      return;
+    }
+
     const saved = localStorage.getItem("teacher-theme");
     const isDark = saved === "dark";
     setDark(isDark);
     document.documentElement.classList.toggle("dark", isDark);
-  }, []);
+  }, [router]);
 
   // mentors jadvalidan full_name ni yuklash
   useEffect(() => {
