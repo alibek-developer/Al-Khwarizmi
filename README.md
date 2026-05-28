@@ -183,4 +183,4 @@ This template is for single-use only. You may use it for one project (personal o
 If you have questions about setup or customization, contact:
 
 **Alibek Allaberganov**
-Telegram: @your_telegram
+Telegram: @alibekdev1
