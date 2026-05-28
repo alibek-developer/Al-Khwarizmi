@@ -1,0 +1,980 @@
+'use client'
+
+import { Footer } from '@/components/footer'
+import { Header } from '@/components/header'
+import { useLocale, useTranslations } from 'next-intl'
+import { supabase } from '@/lib/supabase'
+import {
+	ArrowRight,
+	BookOpen,
+	CheckCircle2,
+	Clock,
+	GraduationCap,
+	Loader2,
+	Search,
+	Send,
+	SlidersHorizontal,
+	Star,
+	TrendingUp,
+	Users,
+	X,
+	Zap,
+} from 'lucide-react'
+import { Link } from '@/i18n/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+type Mentor = {
+	id: number
+	full_name: string
+	specialty_en: string
+	image_url: string
+	rating: number
+}
+
+type Course = {
+	id: number
+	category_id: number | null
+	mentor_id: number | null
+	title_en: string
+	title_uz: string
+	duration: string
+	level: string
+	lessons_count: number
+	total_students: number
+	price: number
+	image_url: string
+	badge: string
+	rating: number
+	mentor?: Mentor | null
+}
+
+const badgeColorMap: Record<string, string> = {
+	HOT: 'bg-red-500',
+	NEW: 'bg-blue-500',
+	POPULAR: 'bg-purple-500',
+	TRENDING: 'bg-orange-500',
+	BESTSELLER: 'bg-emerald-500',
+}
+
+const levelColorMap: Record<string, string> = {
+	Beginner:
+		'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
+	Intermediate:
+		'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
+	Advanced:
+		'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
+	'A1–C1': 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400',
+}
+
+const inputCls =
+	'w-full h-11 px-4 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors disabled:opacity-60'
+const labelCls =
+	'block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1.5'
+
+function LevelBadge({ level }: { level: string }) {
+	return (
+		<span
+			className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${levelColorMap[level] ?? 'bg-slate-100 text-slate-500'}`}
+		>
+			{level}
+		</span>
+	)
+}
+
+function SkeletonCard() {
+	return (
+		<div className='bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 animate-pulse'>
+			<div className='h-48 bg-slate-200 dark:bg-slate-700' />
+			<div className='p-5 space-y-3'>
+				<div className='flex gap-2'>
+					<div className='h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded' />
+					<div className='h-4 w-16 bg-slate-200 dark:bg-slate-700 rounded' />
+				</div>
+				<div className='h-4 w-3/4 bg-slate-200 dark:bg-slate-700 rounded' />
+				<div className='h-3 w-full bg-slate-200 dark:bg-slate-700 rounded' />
+				<div className='h-10 bg-slate-100 dark:bg-slate-700/50 rounded-xl' />
+			</div>
+		</div>
+	)
+}
+
+// ─── Enroll Modal ──────────────────────────────────────────────────────────
+function EnrollModal({
+	course,
+	onClose,
+}: {
+	course: Course
+	onClose: () => void
+}) {
+	const t = useTranslations('courses')
+	const [form, setForm] = useState({
+		last_name: '',
+		first_name: '',
+		father_name: '',
+		birth_date: '',
+		phone: '',
+		parent_phone: '',
+		certificate_id: '',
+		pinfl: '',
+	})
+	const [submitting, setSubmitting] = useState(false)
+	const [success, setSuccess] = useState(false)
+	const overlayRef = useRef<HTMLDivElement>(null)
+
+	const set =
+		(key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+			setForm(p => ({ ...p, [key]: e.target.value }))
+
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') onClose()
+		}
+		document.addEventListener('keydown', handler)
+		document.body.style.overflow = 'hidden'
+		return () => {
+			document.removeEventListener('keydown', handler)
+			document.body.style.overflow = ''
+		}
+	}, [onClose])
+
+	const handleSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		setSubmitting(true)
+		await supabase.from('students').insert([
+			{
+				first_name: form.first_name,
+				last_name: form.last_name,
+				father_name: form.father_name || null,
+				birth_date: form.birth_date || null,
+				phone: form.phone,
+				parent_phone: form.parent_phone || null,
+				certificate_id: form.certificate_id || null,
+				pinfl: form.pinfl || null,
+				course_id: course.id,
+				payment_amount: course.price || 0,
+				status: 'pending',
+			},
+		])
+		setSubmitting(false)
+		setSuccess(true)
+	}
+
+	const mentor = course.mentor
+
+	return (
+		<div
+			ref={overlayRef}
+			onClick={e => {
+				if (e.target === overlayRef.current) onClose()
+			}}
+			className='fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm'
+			style={{ animation: 'fadeIn .18s ease' }}
+		>
+			<style>{`
+				@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
+				@keyframes slideUp { from { opacity:0; transform:translateY(20px) scale(.97) } to { opacity:1; transform:translateY(0) scale(1) } }
+			`}</style>
+
+			<div
+				className='relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden'
+				style={{ animation: 'slideUp .22s ease' }}
+			>
+				<button
+					onClick={onClose}
+					className='absolute top-4 right-4 z-10 w-9 h-9 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl flex items-center justify-center text-white transition-all'
+				>
+					<X className='w-4 h-4' />
+				</button>
+
+				{/* Course header */}
+				<div className='relative h-36 overflow-hidden'>
+					{course.image_url ? (
+						<img
+							src={course.image_url}
+							alt={course.title_en}
+							className='w-full h-full object-cover'
+						/>
+					) : (
+						<div className='w-full h-full bg-gradient-to-r from-blue-600 to-indigo-600' />
+					)}
+					<div className='absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/60 to-transparent' />
+					<div className='absolute inset-0 p-6 flex flex-col justify-end'>
+						{course.badge && (
+							<span
+								className={`inline-block ${badgeColorMap[course.badge] || 'bg-slate-500'} text-white text-[9px] font-black px-2 py-0.5 rounded-md mb-2 w-fit tracking-widest`}
+							>
+								{course.badge}
+							</span>
+						)}
+						<h2 className='text-white font-black text-xl leading-snug line-clamp-1'>
+							{course.title_en}
+						</h2>
+						<p className='text-blue-300 text-xs italic'>{course.title_uz}</p>
+					</div>
+				</div>
+
+				{/* Stats */}
+				<div className='grid grid-cols-4 border-b border-slate-100 dark:border-slate-800'>
+					{[
+						{
+							icon: Clock,
+							label: 'Davomiyligi',
+							value: course.duration || '—',
+						},
+						{
+							icon: GraduationCap,
+							label: 'Daraja',
+							value: course.level || '—',
+						},
+						{
+							icon: BookOpen,
+							label: 'Darslar',
+							value: `${course.lessons_count || 0} ta`,
+						},
+						{
+							icon: Users,
+							label: 'Talabalar',
+							value: (course.total_students || 0).toLocaleString(),
+						},
+					].map(({ icon: Icon, label, value }) => (
+						<div
+							key={label}
+							className='flex flex-col items-center py-3.5 border-r last:border-r-0 border-slate-100 dark:border-slate-800'
+						>
+							<Icon className='w-4 h-4 text-blue-600 mb-1' />
+							<p className='text-[10px] text-slate-400 mb-0.5'>{label}</p>
+							<p className='text-xs font-bold text-slate-800 dark:text-white'>
+								{value}
+							</p>
+						</div>
+					))}
+				</div>
+
+				{/* Form / Success */}
+				<div className='p-6 overflow-y-auto max-h-[60vh]'>
+					{success ? (
+						<div className='text-center py-6'>
+							<div className='w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+								<CheckCircle2 className='w-8 h-8 text-emerald-600' />
+							</div>
+							<h3 className='text-xl font-black text-slate-900 dark:text-white mb-1'>
+								Muvaffaqiyatli yuborildi!
+							</h3>
+							<p className='text-slate-400 text-sm mb-1'>
+								Arizangiz qabul qilindi.
+							</p>
+							<p className='text-slate-400 text-sm italic'>
+								Jamoamiz tez orada siz bilan bog'lanadi.
+							</p>
+							<button
+								onClick={onClose}
+								className='mt-6 inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-8 py-3 rounded-xl transition-all'
+							>
+								Yopish <X className='w-3.5 h-3.5' />
+							</button>
+						</div>
+					) : (
+						<>
+							<div className='mb-5'>
+								<h3 className='font-black text-slate-900 dark:text-white text-lg mb-0.5'>
+									Kursga yozilish
+								</h3>
+								<p className='text-slate-400 text-xs italic'>
+									Enroll in this course — fill in your details below
+								</p>
+							</div>
+
+							<form onSubmit={handleSubmit} className='space-y-4'>
+								{/* Ism ma'lumotlari */}
+								<div className='grid grid-cols-3 gap-3'>
+									<div>
+										<label className={labelCls}>Familiya *</label>
+										<input
+											required
+											className={inputCls}
+											placeholder='Karimov'
+											value={form.last_name}
+											onChange={set('last_name')}
+											disabled={submitting}
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>Ism *</label>
+										<input
+											required
+											className={inputCls}
+											placeholder='Jasur'
+											value={form.first_name}
+											onChange={set('first_name')}
+											disabled={submitting}
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>Otasining ismi</label>
+										<input
+											className={inputCls}
+											placeholder='Aliyevich'
+											value={form.father_name}
+											onChange={set('father_name')}
+											disabled={submitting}
+										/>
+									</div>
+								</div>
+
+								{/* Tug'ilgan sana + Telefon */}
+								<div className='grid grid-cols-2 gap-3'>
+									<div>
+										<label className={labelCls}>Tug'ilgan sana</label>
+										<input
+											type='date'
+											className={inputCls}
+											value={form.birth_date}
+											onChange={set('birth_date')}
+											disabled={submitting}
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>Telefon *</label>
+										<input
+											required
+											type='tel'
+											className={inputCls}
+											placeholder='+998 90 000 00 00'
+											value={form.phone}
+											onChange={set('phone')}
+											disabled={submitting}
+										/>
+									</div>
+								</div>
+
+								{/* Ota-ona telefoni */}
+								<div>
+									<label className={labelCls}>Ota-ona telefoni</label>
+									<input
+										type='tel'
+										className={inputCls}
+										placeholder='+998 90 000 00 00'
+										value={form.parent_phone}
+										onChange={set('parent_phone')}
+										disabled={submitting}
+									/>
+								</div>
+
+								{/* Guvohnoma + PINFL */}
+								<div className='grid grid-cols-2 gap-3'>
+									<div>
+										<label className={labelCls}>Guvohnoma raqami</label>
+										<input
+											className={inputCls}
+											placeholder='AA1234567'
+											value={form.certificate_id}
+											onChange={set('certificate_id')}
+											disabled={submitting}
+										/>
+									</div>
+									<div>
+										<label className={labelCls}>PINFL (JSHSHR)</label>
+										<input
+											className={inputCls}
+											placeholder='12345678901234'
+											maxLength={14}
+											value={form.pinfl}
+											onChange={set('pinfl')}
+											disabled={submitting}
+										/>
+									</div>
+								</div>
+
+								{/* Mentor row */}
+								{mentor && (
+									<div className='flex items-center gap-3 p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700'>
+										{mentor.image_url ? (
+											<img
+												src={mentor.image_url}
+												alt={mentor.full_name}
+												className='w-9 h-9 rounded-xl object-cover ring-2 ring-blue-100 dark:ring-blue-900'
+											/>
+										) : (
+											<div className='w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center ring-2 ring-blue-100 dark:ring-blue-900'>
+												<span className='text-white text-[10px] font-black'>
+													{mentor.full_name
+														.split(' ')
+														.map(w => w[0])
+														.join('')
+														.slice(0, 2)}
+												</span>
+											</div>
+										)}
+										<div className='flex-1 min-w-0'>
+											<p className='text-[10px] text-slate-400 font-medium'>
+												O'qituvchi
+											</p>
+											<p className='text-sm font-bold text-slate-800 dark:text-white'>
+												{mentor.full_name}
+											</p>
+										</div>
+										<div className='flex items-center gap-1 shrink-0'>
+											<Star className='w-3.5 h-3.5 fill-yellow-400 text-yellow-400' />
+											<span className='text-sm font-black text-slate-800 dark:text-white'>
+												{mentor.rating || course.rating}
+											</span>
+										</div>
+										{course.level && <LevelBadge level={course.level} />}
+									</div>
+								)}
+
+								{/* Price + Submit */}
+								<div className='flex items-center justify-between pt-1'>
+									<div>
+										<p className='text-xs text-slate-400'>Kurs narxi</p>
+										<p className='text-2xl font-black text-slate-900 dark:text-white'>
+											${course.price}
+										</p>
+									</div>
+									<button
+										type='submit'
+										disabled={
+											submitting ||
+											!form.first_name ||
+											!form.last_name ||
+											!form.phone
+										}
+										className='flex items-center gap-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-black text-sm h-12 px-8 rounded-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-500/25 disabled:shadow-none'
+									>
+										{submitting ? (
+											<>
+												<Loader2 className='w-4 h-4 animate-spin' />{' '}
+												Yuborilmoqda...
+											</>
+										) : (
+											<>
+												<Send className='w-4 h-4' /> Yozilish{' '}
+												<ArrowRight className='w-3.5 h-3.5' />
+											</>
+										)}
+									</button>
+								</div>
+							</form>
+						</>
+					)}
+				</div>
+			</div>
+		</div>
+	)
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────
+export default function CoursesPage() {
+	const isUzbek = useLocale() === 'uz'
+	const t = useTranslations('courses')
+	const [courses, setCourses] = useState<Course[]>([])
+	const [loading, setLoading] = useState(true)
+	const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+	const [search, setSearch] = useState('')
+	const [activeCategory, setActiveCategory] = useState('all')
+	const [activeLevel, setActiveLevel] = useState('All Levels')
+	const [showFilters, setShowFilters] = useState(false)
+
+	useEffect(() => {
+		const fetchData = async () => {
+			setLoading(true)
+			const { data: coursesData } = await supabase
+				.from('courses')
+				.select('*')
+				.order('created_at', { ascending: false })
+			if (!coursesData) {
+				setLoading(false)
+				return
+			}
+
+			const mentorIds = [
+				...new Set(coursesData.map(c => c.mentor_id).filter(Boolean)),
+			]
+			let mentorMap: Record<number, Mentor> = {}
+			if (mentorIds.length > 0) {
+				const { data: mentorsData } = await supabase
+					.from('mentors')
+					.select('id, full_name, specialty_en, image_url, rating')
+					.in('id', mentorIds)
+				mentorsData?.forEach(m => {
+					mentorMap[m.id] = m
+				})
+			}
+
+			setCourses(
+				coursesData.map(c => ({
+					...c,
+					mentor: c.mentor_id ? mentorMap[c.mentor_id] || null : null,
+				})),
+			)
+			setLoading(false)
+		}
+		fetchData()
+	}, [])
+
+	const categories = useMemo(() => {
+		const levels = [...new Set(courses.map(c => c.level).filter(Boolean))]
+		return [
+			{ id: 'all', label: 'All Courses', labelUz: 'Barcha', isAll: true },
+			...levels.map(l => ({ id: l, label: l, labelUz: l, isAll: false })),
+		]
+	}, [courses])
+
+	const levels = ['All Levels', 'Beginner', 'Intermediate', 'Advanced']
+
+	const filtered = useMemo(
+		() =>
+			courses.filter(c => {
+				const matchCat = activeCategory === 'all' || c.level === activeCategory
+				const matchLevel =
+					activeLevel === 'All Levels' || c.level === activeLevel
+				const matchSearch =
+					search === '' ||
+					c.title_en?.toLowerCase().includes(search.toLowerCase()) ||
+					c.title_uz?.toLowerCase().includes(search.toLowerCase())
+				return matchCat && matchLevel && matchSearch
+			}),
+		[courses, activeCategory, activeLevel, search],
+	)
+
+	const totalStudents = courses.reduce((a, c) => a + (c.total_students || 0), 0)
+
+	return (
+		<>
+			{selectedCourse && (
+				<EnrollModal
+					course={selectedCourse}
+					onClose={() => setSelectedCourse(null)}
+				/>
+			)}
+			<Header />
+			<main className='flex-1'>
+				{/* ── HERO ── */}
+				<section className='relative py-20 md:py-28 bg-white dark:bg-slate-950 overflow-hidden border-b border-slate-100 dark:border-slate-800'>
+					<div
+						className='absolute inset-0 opacity-[0.03] dark:opacity-[0.05]'
+						style={{
+							backgroundImage:
+								'linear-gradient(#3b82f6 1px, transparent 1px), linear-gradient(90deg, #3b82f6 1px, transparent 1px)',
+							backgroundSize: '56px 56px',
+						}}
+					/>
+					<div className='absolute top-0 right-0 w-[500px] h-[500px] rounded-full bg-blue-400/8 dark:bg-blue-500/8 blur-[100px] pointer-events-none' />
+
+					<div className='relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+						<div className='max-w-3xl'>
+							<div className='inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs font-bold px-4 py-2 rounded-full mb-8 tracking-widest uppercase'>
+								<Zap className='w-3.5 h-3.5' />
+								{loading ? '...' : `${courses.length}+ ${t('hero_badge')}`}
+							</div>
+							<h1 className='text-5xl md:text-6xl font-black text-slate-900 dark:text-white mb-5 leading-[1.02] tracking-tight'>
+								{t('hero_heading_1')}
+								<br />
+								<span className='text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500'>
+									{t('hero_heading_2')}
+								</span>
+							</h1>
+							<p className='text-slate-500 dark:text-slate-400 text-lg mb-2 max-w-xl leading-relaxed'>
+								{t('hero_sub')}
+							</p>
+							<p className='text-slate-400 dark:text-slate-600 text-base italic mb-10 max-w-xl'>
+								{t('hero_sub')}
+							</p>
+							<div className='flex flex-wrap gap-4'>
+							{[
+								{
+									icon: BookOpen,
+									value: loading ? '...' : `${courses.length}+`,
+									key: 'stat_courses',
+								},
+								{
+									icon: Users,
+									value: loading
+										? '...'
+										: `${totalStudents.toLocaleString()}+`,
+									key: 'stat_students',
+								},
+								{
+									icon: TrendingUp,
+									value: '98%',
+									key: 'stat_job_placement',
+								},
+								{
+									icon: Clock,
+									value: '6w–6mo',
+									key: 'stat_duration',
+								},
+							].map(({ icon: Icon, value, key }) => (
+								<div
+									key={key}
+									className='flex items-center gap-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl'
+								>
+									<Icon className='w-3.5 h-3.5 text-blue-600' />
+									<span className='text-xs font-bold text-slate-900 dark:text-white'>
+										{value}
+									</span>
+									<span className='text-xs text-slate-400'>
+										{t(key)}
+									</span>
+								</div>
+							))}
+							</div>
+						</div>
+					</div>
+				</section>
+
+				{/* ── FILTERS ── */}
+				<section className='sticky top-[68px] z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-lg border-b border-slate-200 dark:border-slate-800'>
+					<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5'>
+						<div className='flex items-center gap-3'>
+							<div className='relative flex-1 max-w-xs'>
+								<Search className='absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400' />
+								<input
+									type='text'
+									placeholder={t('search_placeholder')}
+									value={search}
+									onChange={e => setSearch(e.target.value)}
+									className='w-full pl-9 pr-4 h-9 text-sm bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors'
+								/>
+							</div>
+							<div className='hidden md:flex items-center gap-1 overflow-x-auto'>
+								{categories.map(cat => (
+									<button
+										key={cat.id}
+										onClick={() => setActiveCategory(cat.id)}
+										className={`shrink-0 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeCategory === cat.id ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+									>
+									{cat.isAll ? t('filter_all') : (isUzbek ? cat.labelUz : cat.label)}
+								</button>
+							))}
+							</div>
+							<button
+								onClick={() => setShowFilters(!showFilters)}
+								className={`flex items-center gap-1.5 h-9 px-3.5 rounded-xl border text-xs font-bold transition-all ${showFilters || activeLevel !== 'All Levels' ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-600' : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+							>
+								<SlidersHorizontal className='w-3.5 h-3.5' />
+								Filter
+								{activeLevel !== 'All Levels' && (
+									<span className='w-4 h-4 bg-blue-600 text-white rounded-full text-[9px] flex items-center justify-center'>
+										1
+									</span>
+								)}
+							</button>
+							<span className='text-xs text-slate-400 shrink-0 hidden sm:block'>
+								{filtered.length} {t('results_count')}
+							</span>
+						</div>
+
+						{showFilters && (
+							<div className='pt-3 flex items-center gap-2 flex-wrap'>
+								<span className='text-xs text-slate-400 font-medium'>
+									{t('level_label')}
+								</span>
+								{levels.map(lvl => (
+									<button
+										key={lvl}
+										onClick={() => setActiveLevel(lvl)}
+										className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeLevel === lvl ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+									>
+										{lvl}
+									</button>
+								))}
+							</div>
+						)}
+
+						<div className='md:hidden flex gap-2 overflow-x-auto pt-3 pb-0.5'>
+							{categories.map(cat => (
+								<button
+									key={cat.id}
+									onClick={() => setActiveCategory(cat.id)}
+									className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${activeCategory === cat.id ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
+								>
+									{cat.isAll ? t('filter_all') : (isUzbek ? cat.labelUz : cat.label)}
+								</button>
+							))}
+						</div>
+					</div>
+				</section>
+
+				{/* ── COURSES GRID ── */}
+				<section className='py-12 bg-slate-50 dark:bg-slate-900'>
+					<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+						{loading ? (
+							<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+								{Array.from({ length: 6 }).map((_, i) => (
+									<SkeletonCard key={i} />
+								))}
+							</div>
+						) : filtered.length === 0 ? (
+							<div className='text-center py-20'>
+								<div className='w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4'>
+									<Search className='w-7 h-7 text-slate-400' />
+								</div>
+								<h3 className='font-bold text-slate-900 dark:text-white mb-1'>
+									{t('empty_title')}
+								</h3>
+								<p className='text-slate-400 text-sm'>
+									{t('empty_desc')}
+								</p>
+								<button
+									onClick={() => {
+										setSearch('')
+										setActiveCategory('all')
+										setActiveLevel('All Levels')
+									}}
+									className='mt-4 text-sm text-blue-600 font-semibold hover:underline'
+								>
+									{t('empty_action')}
+								</button>
+							</div>
+						) : (
+							<div className='grid sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+								{filtered.map((course, idx) => (
+									<div
+										key={course.id}
+										onClick={() => setSelectedCourse(course)}
+										className='group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 cursor-pointer'
+										style={{ animationDelay: `${idx * 50}ms` }}
+									>
+										<div className='relative h-48 overflow-hidden bg-slate-200 dark:bg-slate-700'>
+											{course.image_url ? (
+												<img
+													src={course.image_url}
+													alt={course.title_en}
+													className='w-full h-full object-cover group-hover:scale-110 transition-transform duration-700'
+												/>
+											) : (
+												<div className='w-full h-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center'>
+													<BookOpen className='w-12 h-12 text-white/30' />
+												</div>
+											)}
+											<div className='absolute inset-0 bg-gradient-to-t from-slate-900/30 to-transparent' />
+											{course.badge && (
+												<span
+													className={`absolute top-3 left-3 ${badgeColorMap[course.badge] || 'bg-slate-500'} text-white text-[10px] font-black px-2.5 py-1 rounded-lg tracking-wider`}
+												>
+													{course.badge}
+												</span>
+											)}
+											<div className='absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-lg px-2.5 py-1 flex items-center gap-1.5 shadow-sm'>
+												<BookOpen className='w-3 h-3 text-blue-600' />
+												<span className='text-[10px] font-bold text-slate-800 dark:text-white'>
+													{course.lessons_count || 0} {t('lessons_display')}
+												</span>
+											</div>
+											<div className='absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/15 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100'>
+												<span className='bg-white text-blue-700 text-xs font-black px-5 py-2.5 rounded-xl shadow-xl translate-y-2 group-hover:translate-y-0 transition-transform duration-300 flex items-center gap-2'>
+													<GraduationCap className='w-3.5 h-3.5' /> {t('enroll_hover')}
+												</span>
+											</div>
+										</div>
+
+										<div className='p-5'>
+											<div className='flex items-center gap-2 mb-3'>
+												{course.level && <LevelBadge level={course.level} />}
+												{course.duration && (
+													<span className='text-[10px] text-slate-400 flex items-center gap-1'>
+														<Clock className='w-3 h-3' />
+														{course.duration}
+													</span>
+												)}
+											</div>
+											<h3 className='font-black text-slate-900 dark:text-white mb-0.5 text-sm leading-snug line-clamp-2'>
+												{isUzbek && course.title_uz
+													? course.title_uz
+													: course.title_en}
+											</h3>
+											<p className='text-xs text-blue-600 italic mb-4 line-clamp-1'>
+												{isUzbek && course.title_uz
+													? course.title_en
+													: course.title_uz}
+											</p>
+											<div className='flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 mb-4'>
+												<span className='flex items-center gap-1.5 bg-slate-50 dark:bg-slate-700 px-2.5 py-1 rounded-lg'>
+													<Users className='w-3 h-3' />{' '}
+													{(course.total_students || 0).toLocaleString()}
+												</span>
+												<span className='flex items-center gap-1'>
+													<Star className='w-3 h-3 fill-amber-400 text-amber-400' />
+													<span className='font-bold text-slate-700 dark:text-slate-300'>
+														{course.rating || '—'}
+													</span>
+												</span>
+											</div>
+											<div className='flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700'>
+												{course.mentor ? (
+													<div className='flex items-center gap-2 min-w-0'>
+														{course.mentor.image_url ? (
+															<img
+																src={course.mentor.image_url}
+																className='w-7 h-7 rounded-full object-cover ring-2 ring-white dark:ring-slate-700 shrink-0'
+															/>
+														) : (
+															<div className='w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shrink-0 ring-2 ring-white dark:ring-slate-700'>
+																<span className='text-white text-[8px] font-black'>
+																	{course.mentor.full_name
+																		.split(' ')
+																		.map(w => w[0])
+																		.join('')
+																		.slice(0, 2)}
+																</span>
+															</div>
+														)}
+														<span className='text-xs text-slate-500 dark:text-slate-400 font-medium truncate'>
+															{course.mentor.full_name}
+														</span>
+													</div>
+												) : (
+													<span className='text-xs text-slate-400'>—</span>
+												)}
+												<span className='font-black text-slate-900 dark:text-white text-base shrink-0'>
+													${course.price}
+												</span>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						)}
+					</div>
+				</section>
+
+				{/* ── PATHS ── */}
+				<section className='py-20 bg-white dark:bg-slate-950'>
+					<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
+						<div className='text-center mb-12'>
+							<p className='text-blue-600 text-xs font-black tracking-widest uppercase mb-3'>
+								Learning Paths / O'quv yo'llari
+							</p>
+							<h2 className='text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2'>
+								Structured Career Paths
+							</h2>
+							<p className='text-slate-400 italic text-sm'>
+								Tuzilgan martaba yo'llari — qayerdan boshlashni bilmaysizmi?
+							</p>
+						</div>
+						<div className='grid md:grid-cols-3 gap-6'>
+							{[
+								{
+									emoji: '🌐',
+									title: 'Frontend Developer',
+									titleUz: 'Frontend Dasturchi',
+									steps: [
+										'HTML & CSS Fundamentals',
+										'JavaScript Mastery',
+										'React & Next.js',
+										'UI/UX Design',
+									],
+									duration: '8 months',
+									color: 'from-blue-600 to-cyan-500',
+								},
+								{
+									emoji: '🤖',
+									title: 'AI/ML Engineer',
+									titleUz: "Sun'iy Intellekt Muhandisi",
+									steps: [
+										'Python Foundations',
+										'Data Science',
+										'Machine Learning',
+										'Deep Learning',
+									],
+									duration: '10 months',
+									color: 'from-indigo-600 to-purple-500',
+								},
+								{
+									emoji: '🔒',
+									title: 'Cybersecurity Expert',
+									titleUz: 'Kiberxavfsizlik Mutaxassisi',
+									steps: [
+										'Network Basics',
+										'Linux & Security',
+										'Ethical Hacking',
+										'SOC Analyst',
+									],
+									duration: '9 months',
+									color: 'from-red-500 to-orange-500',
+								},
+							].map(path => (
+								<div
+									key={path.title}
+									className='group bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-800 hover:shadow-xl transition-all duration-300 overflow-hidden hover:-translate-y-1'
+								>
+									<div className={`h-1.5 bg-gradient-to-r ${path.color}`} />
+									<div className='p-6'>
+										<div className='text-3xl mb-4'>{path.emoji}</div>
+										<h3 className='font-black text-slate-900 dark:text-white text-lg mb-0.5'>
+											{path.title}
+										</h3>
+										<p className='text-xs text-slate-400 italic mb-4'>
+											{path.titleUz} · {path.duration}
+										</p>
+										<div className='space-y-2.5 mb-5'>
+											{path.steps.map((step, idx) => (
+												<div key={step} className='flex items-center gap-3'>
+													<div
+														className={`w-6 h-6 rounded-full bg-gradient-to-r ${path.color} text-white text-[10px] font-black flex items-center justify-center shrink-0 shadow-sm`}
+													>
+														{idx + 1}
+													</div>
+													<span className='text-sm text-slate-600 dark:text-slate-300 font-medium'>
+														{step}
+													</span>
+												</div>
+											))}
+										</div>
+										<Link
+											href='/courses'
+											className='flex items-center gap-1.5 text-sm font-bold text-blue-600 dark:text-blue-400 hover:gap-2.5 transition-all'
+										>
+											Yo'lni boshlash <ArrowRight className='w-3.5 h-3.5' />
+										</Link>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</section>
+
+				{/* ── CTA ── */}
+				<section className='py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-700 relative overflow-hidden'>
+					<div
+						className='absolute inset-0 opacity-10'
+						style={{
+							backgroundImage:
+								'radial-gradient(circle, #fff 1px, transparent 1px)',
+							backgroundSize: '28px 28px',
+						}}
+					/>
+					<div className='relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center'>
+						<h2 className='text-3xl md:text-5xl font-black text-white mb-3 leading-tight'>
+							Yo'lingizni topa olmadingizmi?
+						</h2>
+						<p className='text-blue-100 italic mb-2 text-sm'>
+							Can't find your path?
+						</p>
+						<p className='text-blue-200/80 mb-10 max-w-xl mx-auto text-sm leading-relaxed'>
+							Bizning maslahatchilarimiz siz uchun maqsadlaringizga mos shaxsiy
+							o'quv rejasini tuzishga yordam beradi.
+						</p>
+						<div className='flex flex-col sm:flex-row gap-4 justify-center'>
+							<Link
+								href='/contact'
+								className='inline-flex items-center justify-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-black text-sm h-14 px-10 rounded-xl shadow-xl transition-all hover:scale-105'
+							>
+								Maslahat olish <ArrowRight className='w-4 h-4' />
+							</Link>
+							<Link
+								href='/teachers'
+								className='inline-flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm h-14 px-10 rounded-xl transition-all backdrop-blur-sm'
+							>
+								O'qituvchilarni ko'rish
+							</Link>
+						</div>
+					</div>
+				</section>
+			</main>
+			<Footer />
+		</>
+	)
+}
