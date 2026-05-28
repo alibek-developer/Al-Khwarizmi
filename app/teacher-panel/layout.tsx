@@ -67,58 +67,6 @@ type MentorInfo = {
   image_url?: string;
 };
 
-async function loadMentorInfo(): Promise<MentorInfo | null> {
-  // 1. localStorage da saqlangan ID bor bo'lsa — to'g'ridan Supabase dan olamiz
-  const storedId = localStorage.getItem("teacherMentorId");
-  const storedName = localStorage.getItem("teacherName");
-
-  if (storedId && parseInt(storedId) > 0) {
-    const { data } = await supabase
-      .from("mentors")
-      .select("id, full_name, email, specialty_en, image_url")
-      .eq("id", parseInt(storedId))
-      .single();
-
-    if (data) {
-      localStorage.setItem("teacherName", data.full_name || "");
-      return data;
-    }
-  }
-
-  // 2. localStorage da faqat ism bor (ID yo'q) — email bilan qidirish
-  const teacherEmail = localStorage.getItem("teacherEmail");
-  if (teacherEmail) {
-    const { data } = await supabase
-      .from("mentors")
-      .select("id, full_name, email, specialty_en, image_url")
-      .eq("email", teacherEmail)
-      .single();
-    if (data) {
-      localStorage.setItem("teacherMentorId", String(data.id));
-      localStorage.setItem("teacherName", data.full_name || "");
-      return data;
-    }
-  }
-
-  // 3. Barcha mentorlardan birinchisini olish (demo / test uchun)
-  const envId = process.env.NEXT_PUBLIC_MENTOR_ID;
-  if (envId && parseInt(envId) > 0) {
-    const { data } = await supabase
-      .from("mentors")
-      .select("id, full_name, email, specialty_en, image_url")
-      .eq("id", parseInt(envId))
-      .single();
-    if (data) return data;
-  }
-
-  // 4. Hech narsa topilmasa — localStorage dagi nomni ishlatamiz
-  if (storedName) {
-    return { id: 0, full_name: storedName, email: "" };
-  }
-
-  return null;
-}
-
 function getInitials(name: string) {
   return (
     name

@@ -21,8 +21,6 @@ const TIME_PER_QUESTION = 15 // tezroq — qiyin
 const XP_PER_CORRECT = 4
 const BONUS_XP = 10
 
-type Operation = '+' | '-' | '*'
-
 function generateQuestion(level: number): {
 	question: string
 	answer: number

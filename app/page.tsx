@@ -1117,8 +1117,8 @@ export default function Home() {
 						<div className='inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-bold px-4 py-2 rounded-full mb-8 tracking-widest uppercase'>
 							<span className='w-1.5 h-1.5 rounded-full bg-white animate-pulse' />
 							{isUzbek
-								? '2024-yil yozgi oqimiga qabul ochiq'
-								: 'Summer 2024 Cohort Open'}
+								? "Yangi o'quv yili qabuli ochiq"
+								: 'New Cohort Enrollment Open'}
 						</div>
 						<h2 className='text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight'>
 							{isUzbek

@@ -107,13 +107,6 @@ export default function StudentDashboardPage() {
 		month: 'long',
 	})
 
-	const getBadge = (rank: number) => {
-		if (rank === 1) return 'gold'
-		if (rank === 2) return 'silver'
-		if (rank === 3) return 'bronze'
-		return undefined
-	}
-
 	if (!mounted || loading) {
 		return (
 			<div className='flex items-center justify-center h-64'>

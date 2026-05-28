@@ -46,12 +46,6 @@ type MentorOption = {
 	image_url?: string
 }
 
-type CourseOption = {
-	id: number
-	title_en: string
-	title_uz?: string
-}
-
 // ─── Constants ─────────────────────────────────────────────────────────────
 const emptyForm: Omit<Course, 'id' | 'created_at'> = {
 	category_id: null,

@@ -18,7 +18,6 @@ import {
   Loader2,
   Mail,
   MapPin,
-  MessageSquare,
   Phone,
   Send,
   Shield,

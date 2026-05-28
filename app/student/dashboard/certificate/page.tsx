@@ -16,12 +16,6 @@ import {
 import { useEffect, useState } from "react";
 import { certificateApi, type Certificate } from "@/lib/api";
 
-const courseColors: Record<string, { gradient: string; text: string }> = {
-  wd: { gradient: "from-violet-500 to-purple-600", text: "text-violet-600 dark:text-violet-400" },
-  en: { gradient: "from-blue-500 to-cyan-600", text: "text-blue-600 dark:text-blue-400" },
-  ds: { gradient: "from-blue-500 to-indigo-600", text: "text-blue-600 dark:text-blue-400" },
-};
-
 export default function StudentCertificatePage() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);

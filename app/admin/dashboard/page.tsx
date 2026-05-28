@@ -2,8 +2,6 @@
 
 import {
 	AlertCircle,
-	ArrowDownRight,
-	ArrowUpRight,
 	BookOpen,
 	CheckCircle2,
 	Clock,

@@ -6,14 +6,11 @@ import { useIsUzbek } from '@/components/language-context'
 import { Button } from '@/components/ui/button'
 import {
 	Award,
-	BarChart2,
 	BriefcaseBusiness,
 	CheckCircle2,
 	Clock,
-	Globe,
 	GraduationCap,
 	Mail,
-	Monitor,
 	Star,
 	Users,
 	X,
@@ -54,63 +51,6 @@ function getInitials(name: string) {
 	)
 }
 
-function SocialIcon({
-	type,
-	size = 'sm',
-}: {
-	type: string
-	size?: 'sm' | 'md'
-}) {
-	const base =
-		size === 'md'
-			? 'w-9 h-9 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:border-blue-600 hover:text-white text-slate-500 dark:text-slate-400 transition-all cursor-pointer'
-			: 'w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 hover:text-blue-600 cursor-pointer'
-	const iconSize = size === 'md' ? 'w-4 h-4' : 'w-3.5 h-3.5'
-	if (type === 'mail')
-		return (
-			<button className={base}>
-				<Mail className={iconSize} />
-			</button>
-		)
-	if (type === 'monitor')
-		return (
-			<button className={base}>
-				<Monitor className={iconSize} />
-			</button>
-		)
-	if (type === 'globe')
-		return (
-			<button className={base}>
-				<Globe className={iconSize} />
-			</button>
-		)
-	if (type === 'bar')
-		return (
-			<button className={base}>
-				<BarChart2 className={iconSize} />
-			</button>
-		)
-	return null
-}
-
-function LevelBadge({ level }: { level: string }) {
-	const colors: Record<string, string> = {
-		Beginner:
-			'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400',
-		Intermediate:
-			'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400',
-		Advanced:
-			'bg-purple-50 text-purple-600 dark:bg-purple-900/20 dark:text-purple-400',
-	}
-	return (
-		<span
-			className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${colors[level] ?? 'bg-slate-100 text-slate-500'}`}
-		>
-			{level}
-		</span>
-	)
-}
-
 // ─── Skeleton card ─────────────────────────────────────────────────────────
 function SkeletonCard() {
 	return (
@@ -135,51 +75,26 @@ function TeacherModal({
 	onClose: () => void
 }) {
 	const isUzbek = useIsUzbek()
-	const isEnglishTeacher = mentor.specialty_en
-		?.toLowerCase()
-		.includes('english')
-
-	const stats = isEnglishTeacher
-		? [
-				{
-					icon: Users,
-					value: mentor.total_students?.toLocaleString() || '0',
-					label: 'Talabalar',
-					color: 'text-blue-600',
-				},
-				{
-					icon: Clock,
-					value: mentor.experience || '—',
-					label: 'Tajriba',
-					color: 'text-emerald-600',
-				},
-				{
-					icon: Star,
-					value: mentor.rating?.toString() || '5.0',
-					label: 'Reyting',
-					color: 'text-amber-500',
-				},
-			]
-		: [
-				{
-					icon: Users,
-					value: mentor.total_students?.toLocaleString() || '0',
-					label: 'Talabalar',
-					color: 'text-blue-600',
-				},
-				{
-					icon: Clock,
-					value: mentor.experience || '—',
-					label: 'Tajriba',
-					color: 'text-emerald-600',
-				},
-				{
-					icon: Star,
-					value: mentor.rating?.toString() || '5.0',
-					label: 'Reyting',
-					color: 'text-amber-500',
-				},
-			]
+	const stats = [
+		{
+			icon: Users,
+			value: mentor.total_students?.toLocaleString() || '0',
+			label: 'Talabalar',
+			color: 'text-blue-600',
+		},
+		{
+			icon: Clock,
+			value: mentor.experience || '—',
+			label: 'Tajriba',
+			color: 'text-emerald-600',
+		},
+		{
+			icon: Star,
+			value: mentor.rating?.toString() || '5.0',
+			label: 'Reyting',
+			color: 'text-amber-500',
+		},
+	]
 
 	return (
 		<div

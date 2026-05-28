@@ -14,8 +14,8 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-const ADMIN_EMAIL = "inoqdost478@gmail.com";
-const ADMIN_PASSWORD = "itparkadmin";
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "admin@alkhorazmiy.uz";
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "itpark2026";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -299,7 +299,7 @@ export default function LoginPage() {
             </div>
           </div>
           <p className="text-center text-[11px] text-slate-400 dark:text-slate-600 mt-5">
-            © 2025 Al-Khwarizmi · Shovot, Xorazm
+            © {new Date().getFullYear()} Al-Khwarizmi · Shovot, Xorazm
           </p>
         </div>
       </div>

@@ -12,35 +12,7 @@ import {
 import { useEffect, useState } from 'react'
 
 import { supabase } from '@/lib/supabase'
-// ── Mentor ID — 3 usulda aniqlanadi ──────────────────────────────────────
-// 1. localStorage (login paytida saqlangan)
-// 2. NEXT_PUBLIC_MENTOR_ID env
-// 3. Supabase auth → mentors.email
-async function getMentorId(): Promise<number | null> {
-	// 1. Login paytida saqlangan ID
-	const stored = localStorage.getItem('teacherMentorId')
-	if (stored && parseInt(stored) > 0) return parseInt(stored)
-
-	// 2. Env variable
-	const env = process.env.NEXT_PUBLIC_MENTOR_ID
-	if (env && parseInt(env) > 0) return parseInt(env)
-
-	// 3. Supabase auth → email orqali
-	const {
-		data: { user },
-	} = await supabase.auth.getUser()
-	if (!user?.email) return null
-	const { data } = await supabase
-		.from('mentors')
-		.select('id')
-		.eq('email', user.email)
-		.single()
-	if (data?.id) {
-		localStorage.setItem('teacherMentorId', String(data.id))
-		return data.id
-	}
-	return null
-}
+import { getMentorId } from '@/lib/teacher-utils'
 
 type Group = {
 	id: number

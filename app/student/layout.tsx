@@ -19,7 +19,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ReactNode, useEffect, useState } from "react";
-import { supabase, studentApi } from "@/lib/api";
+import { studentApi } from "@/lib/api";
 
 const navItems = [
   {

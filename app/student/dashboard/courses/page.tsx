@@ -2,59 +2,15 @@
 
 import {
   BookOpen,
-  CheckCircle2,
   ChevronRight,
-  Clock,
   FileText,
   FolderOpen,
   Play,
   Users,
-  Video,
   Loader2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { courseApi, type Material } from "@/lib/api";
-
-type CourseEnrollment = {
-  groups: {
-    id: number;
-    name: string;
-    course: {
-      id: number;
-      title_en: string;
-      title_uz: string;
-      lessons_count: number;
-      image_url?: string;
-    };
-    mentor: {
-      full_name: string;
-    };
-  };
-};
-
-const mockCourses = [
-  {
-    id: 1,
-    name: "Web Development",
-    description: "HTML, CSS, JavaScript va React asoslari",
-    progress: 72,
-    totalLessons: 24,
-    completedLessons: 17,
-    mentor: "Islombek Aliyev",
-    mentorAvatar: "IA",
-    lessons: [
-      { id: 1, title: "HTML asoslari", type: "video", duration: "45 daq", completed: true },
-      { id: 2, title: "CSS stillari", type: "video", duration: "60 daq", completed: true },
-      { id: 3, title: "JavaScript kirish", type: "video", duration: "55 daq", completed: true },
-      { id: 4, title: "React komponentlari", type: "video", duration: "50 daq", completed: false },
-      { id: 5, title: "Mashq: Layout yaratish", type: "homework", duration: "2 soat", completed: false },
-    ],
-    materials: [
-      { name: "HTML cheat sheet.pdf", size: "1.2 MB" },
-      { name: "CSS grid guide.pdf", size: "2.4 MB" },
-    ],
-  },
-];
 
 const courseGradients: Record<number, string> = {
   1: "from-violet-500 to-purple-600",

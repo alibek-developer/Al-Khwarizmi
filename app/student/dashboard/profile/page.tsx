@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   Eye,
   EyeOff,
-  GraduationCap,
   Lock,
   Mail,
   Phone,
@@ -393,7 +392,6 @@ export default function StudentProfilePage() {
                   amber: { bg: "bg-amber-50 dark:bg-amber-500/10", text: "text-amber-600 dark:text-amber-400" },
                   violet: { bg: "bg-violet-50 dark:bg-violet-500/10", text: "text-violet-600 dark:text-violet-400" },
                   emerald: { bg: "bg-emerald-50 dark:bg-emerald-500/10", text: "text-emerald-600 dark:text-emerald-400" },
-                  blue: { bg: "bg-blue-50 dark:bg-blue-500/10", text: "text-blue-600 dark:text-blue-400" },
                 };
                 const colors = colorClasses[stat.color];
                 return (
