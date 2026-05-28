@@ -11,31 +11,23 @@ import {
   Twitter,
   Youtube,
 } from "lucide-react";
-import Link from "next/link";
-import { useIsUzbek } from "./language-context";
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 const programs = [
-  { label: "Web Development", labelUz: "Veb Dasturlash", href: "/courses/web" },
-  { label: "Data Science", labelUz: "Ma'lumotlar Fani", href: "/courses/data" },
-  {
-    label: "AI & Machine Learning",
-    labelUz: "Sun'iy Intellekt",
-    href: "/courses/ai",
-  },
-  {
-    label: "Cybersecurity",
-    labelUz: "Kiberxavfsizlik",
-    href: "/courses/cyber",
-  },
-  { label: "Mobile Apps", labelUz: "Mobil Ilovalar", href: "/courses/mobile" },
+  { key: "web_development", href: "/courses/web" },
+  { key: "data_science", href: "/courses/data" },
+  { key: "ai_ml", href: "/courses/ai" },
+  { key: "cybersecurity", href: "/courses/cyber" },
+  { key: "mobile_apps", href: "/courses/mobile" },
 ];
 
 const company = [
-  { label: "About Us", labelUz: "Biz haqimizda", href: "/about" },
-  { label: "Our Teachers", labelUz: "O'qituvchilar", href: "/teachers" },
-  { label: "Student Stories", labelUz: "Talaba hikoyalari", href: "/stories" },
-  { label: "Careers", labelUz: "Vakansiyalar", href: "/careers" },
-  { label: "Contact", labelUz: "Aloqa", href: "/contact" },
+  { key: "about_us", href: "/about" },
+  { key: "our_teachers", href: "/teachers" },
+  { key: "student_stories", href: "/stories" },
+  { key: "careers", href: "/careers" },
+  { key: "contact_link", href: "/contact" },
 ];
 
 const socials = [
@@ -66,8 +58,8 @@ const socials = [
 ];
 
 export function Footer() {
+  const t = useTranslations("footer");
   const year = new Date().getFullYear();
-  const isUzbek = useIsUzbek();
 
   return (
     <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 transition-colors duration-300">
@@ -77,21 +69,17 @@ export function Footer() {
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl px-8 py-8 md:py-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-blue-500/20">
             <div>
               <h3 className="text-white font-black text-xl md:text-2xl mb-1">
-                {isUzbek
-                  ? "Safaringizni boshlashga tayyormisiz?"
-                  : "Ready to Start Your Journey?"}
+                {t("cta_heading")}
               </h3>
               <p className="text-blue-200 text-sm">
-                {isUzbek
-                  ? "Bugunoq ro'yxatdan o'ting va martabangizni o'zgartiring."
-                  : "Sayohatingizni boshlashga tayyormisiz? — Enroll today and transform your career."}
+                {t("cta_sub")}
               </p>
             </div>
             <Link
               href="/courses"
               className="shrink-0 flex items-center gap-2 bg-white text-blue-700 hover:bg-blue-50 font-black text-sm px-6 py-3.5 rounded-xl transition-all hover:scale-105 shadow-md"
             >
-              {isUzbek ? "Barcha kurslarni ko'rish" : "Explore All Courses"}
+              {t("cta_btn")}
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -126,12 +114,10 @@ export function Footer() {
             </Link>
 
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-2 max-w-xs">
-              Empowering the next generation of tech leaders through world-class
-              education and mentorship.
+              {t("brand_desc")}
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-600 italic leading-relaxed mb-6 max-w-xs">
-              Jahon darajasidagi ta'lim va murabbiylik orqali texnologiya
-              sohasining kelgusi rahbarlarini shakllantiramiz.
+              {t("brand_desc")}
             </p>
 
             {/* Socials */}
@@ -153,7 +139,7 @@ export function Footer() {
           <div className="md:col-span-3">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" />
-              {isUzbek ? "Dasturlar" : "Programs"}
+              {t("programs_title")}
             </h3>
             <ul className="space-y-3">
               {programs.map((item) => (
@@ -164,9 +150,9 @@ export function Footer() {
                   >
                     <ArrowRight className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
                     <div>
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium">{t("program_" + item.key)}</span>
                       <span className="block text-xs text-slate-400 dark:text-slate-600 italic">
-                        {isUzbek ? item.labelUz : item.labelUz}
+                        {t("program_" + item.key)}
                       </span>
                     </div>
                   </Link>
@@ -179,7 +165,7 @@ export function Footer() {
           <div className="md:col-span-2">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" />
-              {isUzbek ? "Kompaniya" : "Company"}
+              {t("company_title")}
             </h3>
             <ul className="space-y-3">
               {company.map((item) => (
@@ -190,9 +176,9 @@ export function Footer() {
                   >
                     <ArrowRight className="w-3.5 h-3.5 mt-0.5 shrink-0 opacity-0 group-hover:opacity-100 -translate-x-1 group-hover:translate-x-0 transition-all" />
                     <div>
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium">{t(item.key)}</span>
                       <span className="block text-xs text-slate-400 dark:text-slate-600 italic">
-                        {isUzbek ? item.labelUz : item.labelUz}
+                        {t(item.key)}
                       </span>
                     </div>
                   </Link>
@@ -205,7 +191,7 @@ export function Footer() {
           <div className="md:col-span-3">
             <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest mb-5 flex items-center gap-2">
               <span className="w-3 h-0.5 bg-blue-600 rounded-full" />
-              {isUzbek ? "Aloqa" : "Contact"}
+              {t("contact_title")}
             </h3>
             <ul className="space-y-4">
               <li>
@@ -218,10 +204,10 @@ export function Footer() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 dark:text-slate-600 mb-0.5">
-                      Email
+                      {t("email_label")}
                     </p>
                     <span className="text-sm text-slate-600 dark:text-slate-300 font-medium group-hover:text-blue-600 transition-colors">
-                      contact@it-park.edu
+                      {t("email")}
                     </span>
                   </div>
                 </a>
@@ -236,10 +222,10 @@ export function Footer() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 dark:text-slate-600 mb-0.5">
-                      Phone / Telefon
+                      {t("phone_label")}
                     </p>
                     <span className="text-sm text-slate-600 dark:text-slate-300 font-medium group-hover:text-blue-600 transition-colors">
-                      +998 90 123 45 67
+                      {t("phone")}
                     </span>
                   </div>
                 </a>
@@ -251,12 +237,10 @@ export function Footer() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-400 dark:text-slate-600 mb-0.5">
-                      Address / Manzil
+                      {t("address_label")}
                     </p>
                     <span className="text-sm text-slate-600 dark:text-slate-300 font-medium">
-                      IT-Park, Toshkent,
-                      <br />
-                      O'zbekiston
+                      {t("address")}
                     </span>
                   </div>
                 </div>
@@ -266,12 +250,12 @@ export function Footer() {
             {/* Newsletter mini */}
             <div className="mt-6 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
               <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
-                {isUzbek ? "Yangiliklar" : "Newsletter"}
+                {t("newsletter_title")}
               </p>
               <div className="flex gap-2">
                 <input
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder={t("newsletter_placeholder")}
                   className="flex-1 text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 placeholder-slate-400 focus:outline-none focus:border-blue-500 transition-colors"
                 />
                 <button className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors">
@@ -287,19 +271,17 @@ export function Footer() {
       <div className="border-t border-slate-100 dark:border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-slate-400 dark:text-slate-600 text-center sm:text-left">
-            {isUzbek
-              ? `© ${year} IT-Park & Al-Kharazmi Academy. Barcha huquqlar himoyalangan.`
-              : `© ${year} IT-Park & Al-Kharazmi Academy. All rights reserved.`}
+            {t("copyright", { year })}
           </p>
           <div className="flex items-center gap-6">
-            {["Privacy Policy", "Terms of Service", "Safety Policy"].map(
-              (item) => (
+            {["privacy_policy", "terms_of_service", "safety_policy"].map(
+              (key) => (
                 <a
-                  key={item}
+                  key={key}
                   href="#"
                   className="text-xs text-slate-400 dark:text-slate-600 hover:text-blue-600 dark:hover:text-slate-300 transition-colors whitespace-nowrap"
                 >
-                  {item}
+                  {t(key)}
                 </a>
               ),
             )}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useLanguage } from '@/components/language-context'
+import { useTranslations } from 'next-intl'
 import {
 	BookOpen,
 	ChevronDown,
@@ -15,55 +16,31 @@ import {
 	X,
 } from 'lucide-react'
 import { useTheme } from 'next-themes'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, usePathname } from '@/i18n/navigation'
 import { useEffect, useRef, useState } from 'react'
 
 const navLinks = [
-	{ href: '/', label: 'Home', labelUz: 'Bosh sahifa' },
+	{ href: '/', key: 'home' },
 	{
 		href: '/courses',
-		label: 'Courses',
-		labelUz: 'Kurslar',
+		key: 'courses',
 		icon: BookOpen,
 		dropdown: [
-			{
-				href: '/courses/web',
-				label: 'Web Development',
-				labelUz: 'Veb Dasturlash',
-				badge: 'Hot',
-			},
-			{
-				href: '/courses/data-science',
-				label: 'Data Science',
-				labelUz: "Ma'lumotlar Fani",
-				badge: '',
-			},
-			{
-				href: '/courses/ai-ml',
-				label: 'AI & ML',
-				labelUz: "Sun'iy Intellekt",
-				badge: 'New',
-			},
-			{
-				href: '/courses/english',
-				label: 'English',
-				labelUz: 'Ingliz tili',
-				badge: '',
-			},
+			{ href: '/courses/web', key: 'courses_web', badge: 'Hot' },
+			{ href: '/courses/data-science', key: 'courses_data_science', badge: '' },
+			{ href: '/courses/ai-ml', key: 'courses_ai_ml', badge: 'New' },
+			{ href: '/courses/english', key: 'courses_english', badge: '' },
 		],
 	},
 	{
 		href: '/teachers',
-		label: 'Teachers',
-		labelUz: "O'qituvchilar",
+		key: 'teachers',
 		icon: Users,
 	},
-	{ href: '/about', label: 'About', labelUz: 'Biz haqimizda', icon: Info },
-	{ href: '/contact', label: 'Contact', labelUz: 'Aloqa', icon: Phone },
+	{ href: '/about', key: 'about', icon: Info },
+	{ href: '/contact', key: 'contact', icon: Phone },
 ]
 
-// Context 'en' | 'uz' ishlatadi — RU yo'q, shuning uchun EN va UZ
 const languages = [
 	{ code: 'en' as const, label: 'English', short: 'EN' },
 	{ code: 'uz' as const, label: "O'zbek", short: 'UZ' },
@@ -77,12 +54,10 @@ export function Header() {
 	const [scrolled, setScrolled] = useState(false)
 	const [mounted, setMounted] = useState(false)
 
-	// Til dropdown'ni to'g'ri yopish uchun Ref
 	const langRef = useRef<HTMLDivElement>(null)
 
-	// ── Context dan til olinadi — localStorage ga ham yoziladi (context ichida)
 	const { language, setLanguage } = useLanguage()
-	const isUzbek = language === 'uz'
+	const t = useTranslations('header')
 
 	useEffect(() => {
 		setMounted(true)
@@ -94,7 +69,6 @@ export function Header() {
 		return () => window.removeEventListener('scroll', onScroll)
 	}, [])
 
-	// TO'G'RI CLICK OUTSIDE: Menyu tashqarisini bosganda yopilishi uchun
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (langRef.current && !langRef.current.contains(event.target as Node)) {
@@ -110,11 +84,8 @@ export function Header() {
 		}
 	}, [langOpen])
 
-	const t = (en: string, uz: string) => (isUzbek ? uz : en)
-
-	// Hydration xatosining oldini olish uchun
 	if (!mounted) {
-		return <div className='h-[68px]' /> // Placeholder
+		return <div className='h-[68px]' />
 	}
 
 	return (
@@ -127,7 +98,6 @@ export function Header() {
 		>
 			<div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8'>
 				<div className='flex items-center justify-between h-[68px]'>
-					{/* ── LOGO ── */}
 					<Link href='/' className='flex items-center gap-2.5 shrink-0 group'>
 						<div className='w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shadow-md shadow-blue-500/30 group-hover:scale-105 transition-transform'>
 							<GraduationCap className='w-5 h-5 text-white' />
@@ -146,13 +116,12 @@ export function Header() {
 						</div>
 					</Link>
 
-					{/* ── CENTER NAV ── */}
 					<nav className='hidden md:flex items-center gap-1'>
 						{navLinks.map(link => {
 							const isActive =
 								pathname === link.href || pathname?.startsWith(link.href + '/')
 							const hasDropdown = !!link.dropdown
-							const label = t(link.label, link.labelUz)
+							const label = t(link.key)
 
 							return (
 								<div key={link.href} className='relative group'>
@@ -172,16 +141,16 @@ export function Header() {
 
 											<div className='absolute top-full left-0 pt-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50'>
 												<div className='w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-slate-200/60 dark:shadow-black/40 border border-slate-100 dark:border-slate-800 overflow-hidden py-1.5'>
-													{link.dropdown!.map(item => (
+													{link.dropdown.map(item => (
 														<Link
 															key={item.href}
 															href={item.href}
 															className='flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium'
 														>
-															<span>{t(item.label, item.labelUz)}</span>
+															<span>{t(item.key)}</span>
 															<div className='flex items-center gap-1.5'>
 																<span className='text-xs text-slate-400 dark:text-slate-500 font-normal'>
-																	{t(item.labelUz, item.label)}
+																	{t(item.key)}
 																</span>
 																{item.badge && (
 																	<span
@@ -204,7 +173,7 @@ export function Header() {
 															href='/courses'
 															className='flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 transition-colors pb-1.5'
 														>
-															{t('View all courses →', 'Barcha kurslar →')}
+															{t('view_all_courses')}
 														</Link>
 													</div>
 												</div>
@@ -230,9 +199,7 @@ export function Header() {
 						})}
 					</nav>
 
-					{/* ── RIGHT CONTROLS ── */}
 					<div className='flex items-center gap-2'>
-						{/* Desktop Language toggle */}
 						<div className='relative hidden sm:block' ref={langRef}>
 							<button
 								onClick={e => {
@@ -251,14 +218,14 @@ export function Header() {
 							{langOpen && (
 								<div
 									className='absolute top-full right-0 mt-2 w-36 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden py-1 z-[100]'
-									onClick={e => e.stopPropagation()} // Menyu ichini bosganda yopilmasligi uchun
+									onClick={e => e.stopPropagation()}
 								>
 									{languages.map(l => (
 										<button
 											key={l.code}
 											onClick={() => {
 												setLanguage(l.code)
-												setLangOpen(false) // Til tanlanganda menyuni yopish
+												setLangOpen(false)
 											}}
 											className={`w-full flex items-center justify-between px-3 py-2 text-sm transition-colors ${
 												language === l.code
@@ -276,7 +243,6 @@ export function Header() {
 							)}
 						</div>
 
-						{/* Theme toggle */}
 						<button
 							onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
 							className='h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-center'
@@ -288,15 +254,13 @@ export function Header() {
 							)}
 						</button>
 
-						{/* CTA */}
 						<Link
 							href='/courses'
 							className='hidden sm:flex items-center gap-2 h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all hover:scale-[1.03] shadow-md shadow-blue-500/20 active:scale-95'
 						>
-							{t('Enroll Now', "Ro'yxatdan o'tish")}
+							{t('enroll_now')}
 						</Link>
 
-						{/* Mobile menu button */}
 						<button
 							onClick={() => setMobileOpen(!mobileOpen)}
 							className='md:hidden h-9 w-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-center'
@@ -311,14 +275,13 @@ export function Header() {
 				</div>
 			</div>
 
-			{/* ── MOBILE MENU ── */}
 			<div
 				className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${mobileOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'}`}
 			>
 				<div className='border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-4 space-y-1'>
 					{navLinks.map(link => {
 						const isActive = pathname === link.href
-						const label = t(link.label, link.labelUz)
+						const label = t(link.key)
 						return (
 							<div key={link.href}>
 								<Link
@@ -333,7 +296,7 @@ export function Header() {
 									{link.icon && <link.icon className='w-4 h-4' />}
 									<span>{label}</span>
 									<span className='text-xs text-slate-400 font-normal ml-auto'>
-										{t(link.labelUz, link.label)}
+										{t(link.key)}
 									</span>
 								</Link>
 								{link.dropdown && (
@@ -346,11 +309,11 @@ export function Header() {
 												className='flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 dark:hover:text-blue-400 transition-colors'
 											>
 												<span className='font-medium'>
-													{t(item.label, item.labelUz)}
+													{t(item.key)}
 												</span>
 												<div className='flex items-center gap-1.5'>
 													<span className='text-[10px] text-slate-400'>
-														{t(item.labelUz, item.label)}
+														{t(item.key)}
 													</span>
 													{item.badge && (
 														<span
@@ -368,7 +331,6 @@ export function Header() {
 						)
 					})}
 
-					{/* Mobile — til va enroll */}
 					<div className='pt-3 mt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2'>
 						<div className='flex items-center gap-1 flex-1'>
 							{languages.map(l => (
@@ -376,7 +338,7 @@ export function Header() {
 									key={l.code}
 									onClick={() => {
 										setLanguage(l.code)
-										setMobileOpen(false) // Mobil menyuni til tanlaganda ham yopish (ixtiyoriy, olib tashlash mumkin)
+										setMobileOpen(false)
 									}}
 									className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${
 										language === l.code
@@ -393,7 +355,7 @@ export function Header() {
 							onClick={() => setMobileOpen(false)}
 							className='px-5 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-500 transition-colors'
 						>
-							{t('Enroll', "Ro'yxat")}
+							{t('enroll_mobile')}
 						</Link>
 					</div>
 				</div>
